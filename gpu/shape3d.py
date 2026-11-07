@@ -85,6 +85,35 @@ def surface_colors(vox, vcol):
     return out
 
 
+def to_lab(rgb):
+    """sRGB 0..255 → CIE Lab (D65)."""
+    c = rgb / 255.0
+    c = np.where(c > 0.04045, ((c + 0.055) / 1.055) ** 2.4, c / 12.92)
+    m = np.array([[0.4124, 0.3576, 0.1805], [0.2126, 0.7152, 0.0722], [0.0193, 0.1192, 0.9505]])
+    xyz = c @ m.T / np.array([0.95047, 1.0, 1.08883])
+    f = np.where(xyz > 0.008856, np.cbrt(xyz), 7.787 * xyz + 16 / 116)
+    return np.stack([116 * f[..., 1] - 16, 500 * (f[..., 0] - f[..., 1]), 200 * (f[..., 1] - f[..., 2])], -1)
+
+
+def quantize(colors, k=5, seed=0):
+    """Groups voxel colours into at most k main colours (shading of one colour ends up together).
+    Returns per-voxel cluster index and the cluster's mean RGB."""
+    lab = to_lab(colors)
+    feat = lab * np.array([0.5, 1.0, 1.0])  # lightness counts less: shadows are not a new colour
+    rng = np.random.default_rng(seed)
+    k = min(k, len(feat))
+    centers = feat[rng.choice(len(feat), k, replace=False)]
+    for _ in range(20):
+        d = ((feat[:, None, :] - centers[None]) ** 2).sum(-1)
+        lab_idx = d.argmin(1)
+        new = np.stack([feat[lab_idx == j].mean(0) if (lab_idx == j).any() else centers[j] for j in range(k)])
+        if np.allclose(new, centers):
+            break
+        centers = new
+    means = np.stack([colors[lab_idx == j].mean(0) if (lab_idx == j).any() else np.zeros(3) for j in range(k)])
+    return lab_idx, means
+
+
 def smooth_labels(lab, vox, passes=1):
     """Majority filter per layer so colours form patches instead of speckles."""
     X, Y, Z = lab.shape
@@ -161,14 +190,19 @@ def keep_grounded(bricks, owner):
     return [b for bi, b in enumerate(bricks) if find(bi) == g]
 
 
-def shape_to_bricks(occ, col, palette, max_studs=20, sizes=None):
+def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=6):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs)
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])
+    pal_lab = to_lab(pal_rgb)
     lab = np.zeros(vox.shape, int)
     idx = np.argwhere(vox)
-    lab[tuple(idx.T)] = nearest(vcol[tuple(idx.T)], pal_rgb)
-    lab = smooth_labels(lab, vox)
+    cl, means = quantize(vcol[tuple(idx.T)], k=max_colors)
+    # each main colour → closest Lego colour (in Lab, so it looks right to the eye)
+    ml = to_lab(means)
+    cl_to_pal = ((ml[:, None, :] - pal_lab[None]) ** 2).sum(-1).argmin(1)
+    lab[tuple(idx.T)] = cl_to_pal[cl]
+    lab = smooth_labels(lab, vox, passes=2)
     bricks, owner = brickify(vox, lab, sizes)
     bricks = keep_grounded(bricks, owner)
     bricks.sort(key=lambda b: (b[4], b[2], b[3]))
