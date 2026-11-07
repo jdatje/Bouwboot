@@ -1,5 +1,5 @@
 import { db, type BuildRow } from './db';
-import { countParts, LIBRARY, PART_TO_SIZE, type Brick, type PartCount } from '#lib/bricks';
+import { countParts, LIBRARY, PART_TO_SIZE, type Brick, type PartCount } from '#lib/bricks.ts';
 
 const key = (part: string, color: number) => `${part}/${color}`;
 

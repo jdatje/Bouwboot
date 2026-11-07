@@ -1,0 +1,38 @@
+name: e2e
+on:
+  workflow_dispatch:
+    inputs:
+      prompts:
+        description: "JSON list of Dutch prompts"
+        required: false
+        default: ""
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: web/package-lock.json }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: cd web && npm ci && npm run build
+      - run: pip install -q playwright && python -m playwright install --with-deps chromium >/dev/null
+      - name: Start server
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+          REBRICKABLE_API_KEY: ${{ secrets.REBRICKABLE_API_KEY }}
+        run: |
+          cd web
+          DATA_DIR=/tmp/bb PORT=3000 ORIGIN=http://localhost:3000 BODY_SIZE_LIMIT=30M nohup node build > /tmp/server.log 2>&1 &
+          sleep 3 && curl -sf localhost:3000/ >/dev/null
+      - name: Run
+        env:
+          PROMPTS: ${{ github.event.inputs.prompts }}
+        run: python tests/e2e.py
+      - if: always()
+        run: cp /tmp/server.log e2e/ 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: e2e, path: e2e/ }

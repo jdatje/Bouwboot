@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { Brick } from '#lib/bricks';
+import type { Brick } from '#lib/bricks.ts';
 
 const dir = process.env.DATA_DIR || './data';
 fs.mkdirSync(dir, { recursive: true });
@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS colors (
 );
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
 `);
+try { db.exec('ALTER TABLE builds ADD COLUMN thumb TEXT'); } catch {}
 
 export type BuildRow = {
 	id: string;
@@ -74,6 +75,7 @@ export type BuildRow = {
 	order_status: string | null;
 	order_list: string | null;
 	created_at: number;
+	thumb: string | null;
 };
 
 export type Build = Omit<BuildRow, 'bricks' | 'order_list'> & {

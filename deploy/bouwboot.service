@@ -1,0 +1,14 @@
+[Unit]
+Description=Bouwboot
+After=network-online.target
+
+[Service]
+User=bouwboot
+WorkingDirectory=/opt/bouwboot/web
+EnvironmentFile=/etc/bouwboot.env
+ExecStart=/usr/bin/node build
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
