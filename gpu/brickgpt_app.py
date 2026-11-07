@@ -82,7 +82,7 @@ image3d = (
     .run_commands(
         "git clone https://github.com/VAST-AI-Research/TripoSR /opt/TripoSR",
         f"cd /opt/TripoSR && git checkout {TRIPOSR_COMMIT}",
-        "mkdir -p /opt/stubs && echo 'def marching_cubes(*a, **k):\n    raise NotImplementedError' > /opt/stubs/torchmcubes.py",
+        "mkdir -p /opt/stubs && printf 'def marching_cubes(*a, **k):\\n    raise NotImplementedError\\n' > /opt/stubs/torchmcubes.py",
     )
     .env({"PYTHONPATH": "/opt/TripoSR:/opt/stubs:/root"})
     .run_function(download_triposr)
@@ -117,6 +117,10 @@ class FastEngine:
         dims = [str(i) for i in range(1, max_brick_dimension + 1)]
         posns = [str(i) for i in range(20)]
         self.eos = self.tok.eos_token_id
+        self.dim_id = {i: int(ids([str(i)])[0]) for i in range(1, max_brick_dimension + 1)}
+        self.id_dim = {v: k for k, v in self.dim_id.items()}
+        from brickgpt.data.brick_library import brick_library
+        self.library = {(min(p["height"], p["width"]), max(p["height"], p["width"])) for p in brick_library.values()}
         self.slots = [ids(dims + [self.tok.eos_token]), ids(["x"]), ids(dims), ids([" ("]), ids(posns),
                       ids([","]), ids(posns), ids([","]), ids(posns), ids([")\n"])]
         self.slot_strs = None
@@ -144,10 +148,20 @@ class FastEngine:
         p = torch.softmax(l, dim=-1)
         return int(allowed[torch.multinomial(p, 1)].item())
 
-    def _gen_brick(self, temperature):
+    def _gen_brick(self, temperature, pairs):
+        """Generates one brick. `pairs` = allowed (h, w) in both orientations: the first number
+        is limited to sizes that exist, the second to sizes that fit with the first."""
+        torch = self.torch
         toks = []
+        h = None
         for i, allowed in enumerate(self.slots):
+            if i == 0:
+                allowed = torch.tensor(sorted({self.dim_id[a] for a, _ in pairs}) + [self.eos], device="cuda")
+            elif i == 2:
+                allowed = torch.tensor(sorted({self.dim_id[b] for a, b in pairs if a == h}), device="cuda")
             t = self._sample(allowed, temperature)
+            if i == 0 and t != self.eos:
+                h = self.id_dim[t]
             if t == self.eos:
                 return ""
             toks.append(t)
@@ -177,9 +191,11 @@ class FastEngine:
 
     def _next_brick(self, bricks, allowed_dims, stats, max_rejections=150):
         rejected, temperature = set(), 0.6
+        base = allowed_dims if allowed_dims is not None else self.library
+        pairs = {(a, b) for a, b in base} | {(b, a) for a, b in base}
         for n in range(max_rejections + 1):
             length, logits = len(self.hist), self.logits.clone()
-            txt = self._gen_brick(temperature)
+            txt = self._gen_brick(temperature, pairs)
             stats["attempts"] += 1
             if not txt:
                 return None

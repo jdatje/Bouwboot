@@ -58,6 +58,7 @@ export class BrickScene {
 	private dist = 30;
 	private fitAuto = true;
 	private ro: ResizeObserver;
+	private ground: THREE.Mesh;
 
 	constructor(private el: HTMLElement) {
 		this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
@@ -78,13 +79,24 @@ export class BrickScene {
 		const fill = new THREE.DirectionalLight(0xffffff, 0.5);
 		fill.position.set(-20, 10, -12);
 		this.scene.add(fill);
-		const ground = new THREE.Mesh(
-			new THREE.CircleGeometry(30, 48),
-			new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.06 })
+		// soft round shadow under the model
+		const c = document.createElement('canvas');
+		c.width = c.height = 128;
+		const g = c.getContext('2d')!;
+		const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+		grad.addColorStop(0, 'rgba(20,30,50,0.22)');
+		grad.addColorStop(0.6, 'rgba(20,30,50,0.10)');
+		grad.addColorStop(1, 'rgba(20,30,50,0)');
+		g.fillStyle = grad;
+		g.fillRect(0, 0, 128, 128);
+		this.ground = new THREE.Mesh(
+			new THREE.PlaneGeometry(1, 1),
+			new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c), transparent: true, depthWrite: false })
 		);
-		ground.rotation.x = -Math.PI / 2;
-		ground.position.y = -0.01;
-		this.scene.add(ground);
+		this.ground.rotation.x = -Math.PI / 2;
+		this.ground.position.y = -0.02;
+		this.ground.scale.set(30, 30, 1);
+		this.scene.add(this.ground);
 		this.scene.add(this.group);
 
 		this.ro = new ResizeObserver(() => this.resize());
@@ -112,6 +124,8 @@ export class BrickScene {
 			y0 = Math.min(y0, b.y); y1 = Math.max(y1, b.y + b.w);
 		}
 		this.offset.set(-(x0 + x1) / 2, 0, -(y0 + y1) / 2);
+		const size = Math.max(x1 - x0, y1 - y0) * 1.7 + 4;
+		this.ground.scale.set(size, size, 1);
 		for (const it of this.items) this.place(it);
 	}
 
