@@ -15,9 +15,11 @@ r = requests.get(url + "/health", headers=H, timeout=600)
 print("health", r.status_code, r.text)
 assert requests.get(url + "/health", timeout=60).status_code == 401, "auth not enforced"
 
-captions = json.loads(os.environ.get("CAPTIONS", "[]")) or [
+captions = json.loads(os.environ.get("CAPTIONS") or "[]") or [
     "Table featuring a flat rectangular surface over four evenly spaced legs.",
     "A crocodile: long low flat body, four short stubby legs, a long tapering tail and a long flat snout.",
+    "A dog standing on four legs with a rectangular body, a raised head and a short tail.",
+    "A small house with four walls, a door opening and a pitched roof.",
 ]
 for i, cap in enumerate(captions):
     t = time.time(); events = []; bricks = []
