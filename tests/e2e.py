@@ -58,6 +58,34 @@ with sync_playwright() as p:
     pg.screenshot(path=f"{out}/mine-done.png")
     report.append(f"[mijn] {time.time() - t:.0f}s " + (pg.locator(".have").inner_text() if pg.locator(".have").count() else pg.locator(".status").inner_text()))
     pg.goto(base + "/magazijn"); time.sleep(3); pg.screenshot(path=f"{out}/magazijn.png", full_page=True)
+
+    # scanning: Gemini draws a photo of loose bricks, then we scan it through the page
+    try:
+        import base64, json as _j
+        G = os.environ["GEMINI_API_KEY"]
+        req = urllib.request.Request(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image:generateContent",
+            data=_j.dumps({"contents": [{"parts": [{"text": "A realistic top-down phone photo of about 15 loose LEGO bricks (2x4, 2x2, 1x2, 1x4 in red, blue, yellow, green, white) spread out on a white table, not touching each other, even daylight."}]}],
+                           "generationConfig": {"responseModalities": ["IMAGE"]}}).encode(),
+            headers={"content-type": "application/json", "x-goog-api-key": G})
+        with urllib.request.urlopen(req, timeout=120) as r:
+            parts = _j.loads(r.read())["candidates"][0]["content"]["parts"]
+        data = next(p["inlineData"]["data"] for p in parts if "inlineData" in p)
+        open(f"{out}/scan-input.jpg", "wb").write(base64.b64decode(data))
+        pg.goto(base + "/magazijn/scan"); time.sleep(1)
+        t = time.time()
+        pg.set_input_files("input[type=file]", f"{out}/scan-input.jpg")
+        while time.time() - t < 180 and not (pg.locator(".grid .item").count() or pg.locator(".err").count()):
+            time.sleep(2)
+        time.sleep(1)
+        pg.screenshot(path=f"{out}/scan-review.png", full_page=True)
+        n = pg.locator(".grid .item").count(); unsure = pg.locator(".grid .item.unsure").count()
+        report.append(f"[scan] {time.time() - t:.0f}s {n} items, {unsure} unsure" + (" ERR " + pg.locator(".err").inner_text() if pg.locator(".err").count() else ""))
+        if n:
+            pg.click(".bottom button.primary"); time.sleep(3)
+            report.append("[scan] after confirm: " + pg.locator("p.muted").first.inner_text())
+    except Exception as e:
+        report.append(f"[scan] FAILED {e}")
     report.append(f"page errors: {errs[:5]}")
     b.close()
 

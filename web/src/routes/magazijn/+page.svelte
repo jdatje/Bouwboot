@@ -97,10 +97,10 @@
 			</ul>
 
 			<h2>Los toevoegen</h2>
-			<div class="row wrap">
-				<select bind:value={addSize}>{#each Object.keys(LIBRARY) as s}<option value={s}>Steen {s}</option>{/each}</select>
-				<select bind:value={addColor}>{#each PALETTE as c}<option value={c.id}>{c.name}</option>{/each}</select>
-				<input type="number" min="1" max="999" bind:value={addQty} style="width:5rem" />
+			<div class="addgrid">
+				<select bind:value={addSize} aria-label="Maat">{#each Object.keys(LIBRARY) as s}<option value={s}>Steen {s}</option>{/each}</select>
+				<select bind:value={addColor} aria-label="Kleur">{#each PALETTE as c}<option value={c.id}>{c.name}</option>{/each}</select>
+				<input type="number" min="1" max="999" bind:value={addQty} aria-label="Aantal" />
 				<button onclick={() => adjust(LIBRARY[addSize], addColor, addQty)}>Toevoegen</button>
 			</div>
 		</section>
@@ -149,7 +149,8 @@
 	.box h2:not(:first-child) { margin-top: 1.4rem; }
 	.row { display: flex; gap: 0.5rem; align-items: center; }
 	.row input { flex: 1; min-width: 0; }
-	.wrap { flex-wrap: wrap; }
+	.addgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+	.addgrid input { min-width: 0; }
 	.between { justify-content: space-between; }
 	.small { font-size: 0.9rem; }
 	.sets { list-style: none; padding: 0; margin: 0.8rem 0 0; display: flex; flex-direction: column; gap: 0.6rem; }

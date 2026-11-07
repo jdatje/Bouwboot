@@ -33,6 +33,7 @@ jobs:
           sleep 3 && curl -sf localhost:3000/ >/dev/null
       - name: Run
         env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           PROMPTS: ${{ github.event.inputs.prompts }}
           ENGINES: ${{ github.event.inputs.engines }}
         run: python tests/e2e.py
