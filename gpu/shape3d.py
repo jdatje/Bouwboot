@@ -99,7 +99,7 @@ def quantize(colors, k=5, seed=0):
     """Groups voxel colours into at most k main colours (shading of one colour ends up together).
     Returns per-voxel cluster index and the cluster's mean RGB."""
     lab = to_lab(colors)
-    feat = lab * np.array([0.5, 1.0, 1.0])  # lightness counts less: shadows are not a new colour
+    feat = lab * np.array([0.35, 1.0, 1.0])  # lightness counts less: shadows are not a new colour
     rng = np.random.default_rng(seed)
     k = min(k, len(feat))
     centers = feat[rng.choice(len(feat), k, replace=False)]
@@ -136,6 +136,7 @@ def brickify(vox, lab, sizes=None):
     """Tiles each layer with bricks of one colour. Returns list of (h, w, x, y, z, label).
     `sizes` limits the brick sizes (1x1 is always kept as a last resort, but avoided)."""
     X, Y, Z = vox.shape
+    lab = lab.copy()
     use = [s for s in SIZES if sizes is None or s in sizes]
     if (1, 1) not in use:
         use.append((1, 1))
@@ -154,17 +155,22 @@ def brickify(vox, lab, sizes=None):
                         if i + h > X or j + w > Y:
                             continue
                         reg = (slice(i, i + h), slice(j, j + w), k)
-                        if not vox[reg].all() or (owner[reg] >= 0).any() or (lab[reg] != c).any():
+                        if not vox[reg].all() or (owner[reg] >= 0).any():
+                            continue
+                        # a few cells of another colour may be swallowed by a big brick (fewer 1x1s)
+                        wrong = int((lab[reg] != c).sum())
+                        if wrong and (h * w < 4 or wrong > 0.25 * h * w):
                             continue
                         below = len(set(owner[i:i + h, j:j + w, k - 1].ravel()) - {-1}) if k > 0 else 0
                         long_x = h > w
-                        score = h * w * 10 + below * 6 + (2 if long_x == prefer_x and h != w else 0)
+                        score = h * w * 10 + below * 6 + (2 if long_x == prefer_x and h != w else 0) - wrong * 12
                         if sizes is not None and (a, b) not in sizes:
                             score -= 1000
                         if score > best_score:
                             best, best_score = (h, w), score
                 h, w = best
                 owner[i:i + h, j:j + w, k] = len(bricks)
+                lab[i:i + h, j:j + w, k] = c
                 bricks.append((h, w, i, j, k, int(c)))
     return bricks, owner
 
@@ -234,7 +240,7 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
-def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=6):
+def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs)
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])

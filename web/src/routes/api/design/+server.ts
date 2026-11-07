@@ -34,6 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!text) throw new Error('Typ eerst wat je wilt bouwen');
 				let allowed: string[] | null = null;
 				let palette: Color[] = PALETTE;
+				let maxBricks = 450;
 				const all = await allColors();
 				const col = (id: number) => PALETTE_BY_ID.get(id) ?? all.get(id);
 				if (onlyMine) {
@@ -42,6 +43,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					if (!allowed.length) throw new Error('Je magazijn heeft nog geen losse stenen (2x4, 1x2, ...). Voeg eerst sets of een scan toe.');
 					const owned = new Set([...lib.values()].flatMap((m) => [...m.keys()]));
 					palette = [...owned].map(col).filter(Boolean) as Color[];
+					maxBricks = [...lib.values()].reduce((a, m) => a + [...m.values()].reduce((x, y) => x + y, 0), 0);
 				}
 
 				let bricks: Brick[] = [];
@@ -65,7 +67,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						const small = await sharp(Buffer.from(img.data, 'base64')).resize(320, 320, { fit: 'inside' }).jpeg({ quality: 80 }).toBuffer();
 						sketch = 'data:image/jpeg;base64,' + small.toString('base64');
 						send({ type: 'sketch', image: sketch });
-						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal);
+						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal, maxBricks);
 					}
 					if (shaped.length < 3) throw new Error('Van deze tekening kon ik geen bouwwerk maken. Probeer het nog eens.');
 					// stream the bricks layer by layer so the build animation still plays
@@ -111,7 +113,11 @@ export const POST: RequestHandler = async ({ request }) => {
 				).run(id, text, title, caption, seed, onlyMine ? 1 : 0, JSON.stringify(bricks), Date.now(), engine, sketch);
 				send({ type: 'saved', id });
 			} catch (e: any) {
-				if (!abort.signal.aborted) send({ type: 'error', message: e?.message ?? String(e) });
+				if (!abort.signal.aborted) {
+					let msg = e?.message ?? String(e);
+					if (/terminated|fetch failed|ECONNRESET|socket/i.test(msg)) msg = 'De verbinding met de bouwer viel weg. Probeer het nog eens.';
+					send({ type: 'error', message: msg });
+				}
 			}
 			try { ctrl.close(); } catch {}
 		},

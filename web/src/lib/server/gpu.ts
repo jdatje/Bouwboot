@@ -75,7 +75,8 @@ export async function shape(
 	imageB64: string,
 	palette: { id: number; hex: string }[],
 	sizes: string[] | null,
-	signal?: AbortSignal
+	signal?: AbortSignal,
+	maxBricks = 450
 ): Promise<ShapeBrick[]> {
 	if (process.env.MOCK_GPU) {
 		const out: ShapeBrick[] = [];
@@ -87,7 +88,7 @@ export async function shape(
 	const res = await fetch(URL3D() + '/shape', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', authorization: `Bearer ${gpuKey()}` },
-		body: JSON.stringify({ image: imageB64, palette, sizes }),
+		body: JSON.stringify({ image: imageB64, palette, sizes, max_bricks: Math.max(20, Math.floor(maxBricks)) }),
 		signal
 	});
 	if (!res.ok) throw new Error(`3D ${res.status}: ${(await res.text()).slice(0, 200)}`);

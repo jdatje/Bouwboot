@@ -292,6 +292,7 @@ class Shaper:
             image: str  # base64 PNG/JPEG
             palette: list[dict]  # [{id, hex}]
             max_studs: int = 16
+            max_bricks: int = 450  # the build is made smaller until it fits
             sizes: list[str] | None = None  # e.g. ["2x4", "1x2"]; None = all
 
         def check(auth):
@@ -320,7 +321,12 @@ class Shaper:
             sizes = None
             if req.sizes:
                 sizes = [tuple(sorted(map(int, x.lower().split("x")))) for x in req.sizes]
-            bricks = shape_to_bricks(occ, col, req.palette, max_studs=max(8, min(req.max_studs, 28)), sizes=sizes)
+            studs = max(6, min(req.max_studs, 28))
+            while True:
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes)
+                if len(bricks) <= req.max_bricks or studs <= 6:
+                    break
+                studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks)}
             print("shape", stats, flush=True)
             return {"bricks": bricks, "stats": stats}
