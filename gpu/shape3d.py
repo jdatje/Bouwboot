@@ -190,6 +190,50 @@ def keep_grounded(bricks, owner):
     return [b for bi, b in enumerate(bricks) if find(bi) == g]
 
 
+def components(vox):
+    """6-connected components of the voxels. Returns label grid (-1 = empty) and sizes."""
+    lab = -np.ones(vox.shape, int)
+    sizes = []
+    X, Y, Z = vox.shape
+    for start in map(tuple, np.argwhere(vox)):
+        if lab[start] >= 0:
+            continue
+        n = len(sizes)
+        stack, cnt = [start], 0
+        lab[start] = n
+        while stack:
+            x, y, z = stack.pop()
+            cnt += 1
+            for dx, dy, dz in ((1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0), (0, 0, 1), (0, 0, -1)):
+                q = (x + dx, y + dy, z + dz)
+                if 0 <= q[0] < X and 0 <= q[1] < Y and 0 <= q[2] < Z and vox[q] and lab[q] < 0:
+                    lab[q] = n
+                    stack.append(q)
+        sizes.append(cnt)
+    return lab, sizes
+
+
+def support(vox, lab_colors):
+    """Removes tiny loose bits and gives bigger floating parts pillars down to whatever is below."""
+    comp, sizes = components(vox)
+    total = vox.sum()
+    for n, size in enumerate(sizes):
+        cells = np.argwhere(comp == n)
+        if cells[:, 2].min() == 0:
+            continue
+        if size < 0.02 * total:
+            vox[tuple(cells.T)] = False
+            continue
+        for x, y, z in cells:
+            if z > 0 and not vox[x, y, z - 1] and comp[x, y, z - 1] != n:
+                zz = z - 1
+                while zz >= 0 and not vox[x, y, zz]:
+                    vox[x, y, zz] = True
+                    lab_colors[x, y, zz] = lab_colors[x, y, z]
+                    zz -= 1
+    return vox, lab_colors
+
+
 def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=6):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs)
     vcol = surface_colors(vox, vcol)
@@ -205,7 +249,25 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=6):
     cl_to_pal = ((ml[:, None, :] - pal_lab[None]) ** 2).sum(-1).argmin(1)
     lab[tuple(idx.T)] = cl_to_pal[cl]
     lab = smooth_labels(lab, vox, passes=2)
-    bricks, owner = brickify(vox, lab, sizes)
-    bricks = keep_grounded(bricks, owner)
+    vox, lab = support(vox, lab)
+    # tile a few ways and keep the one where the most bricks hold on to the ground
+    best = None
+    for flip in (False, True):
+        v = vox[::-1] if flip else vox
+        l = lab[::-1] if flip else lab
+        for parity in (0, 1):
+            vv = np.concatenate([np.zeros_like(v[:, :, :1]), v], 2) if parity else v
+            ll = np.concatenate([np.zeros_like(l[:, :, :1]), l], 2) if parity else l
+            bricks, owner = brickify(vv, ll, sizes)
+            if parity:  # undo the dummy layer used to swap the preferred direction
+                bricks = [(h, w, x, y, z - 1, c) for h, w, x, y, z, c in bricks]
+                owner = owner[:, :, 1:]
+            kept = keep_grounded(bricks, owner)
+            if flip:
+                X = vox.shape[0]
+                kept = [(h, w, X - x - h, y, z, c) for h, w, x, y, z, c in kept]
+            if best is None or len(kept) > len(best) or (len(kept) == len(best) and len(kept) < len(bricks)):
+                best = kept
+    bricks = best
     bricks.sort(key=lambda b: (b[4], b[2], b[3]))
     return [{"h": h, "w": w, "x": x, "y": y, "z": z, "c": palette[l]["id"]} for h, w, x, y, z, l in bricks]

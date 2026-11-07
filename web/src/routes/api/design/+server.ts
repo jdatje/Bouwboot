@@ -51,14 +51,22 @@ export const POST: RequestHandler = async ({ request }) => {
 				const seed = Math.floor(Math.random() * 1e9);
 
 				if (engine === '3d') {
-					const [cap, img] = await Promise.all([toCaption(text, 0), drawToy(text, variation)]);
-					caption = cap.caption;
-					title = cap.title;
-					send({ type: 'caption', caption, title });
-					const small = await sharp(Buffer.from(img.data, 'base64')).resize(320, 320, { fit: 'inside' }).jpeg({ quality: 80 }).toBuffer();
-					sketch = 'data:image/jpeg;base64,' + small.toString('base64');
-					send({ type: 'sketch', image: sketch });
-					const shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal);
+					const capP = toCaption(text, 0);
+					let shaped: Awaited<ReturnType<typeof shape>> = [];
+					// a drawing sometimes doesn't turn into a usable 3D shape; then draw again once
+					for (let attempt = 0; attempt < 2 && shaped.length < 25; attempt++) {
+						const img = await drawToy(text, variation + attempt * 7);
+						if (!title) {
+							const cap = await capP;
+							caption = cap.caption;
+							title = cap.title;
+							send({ type: 'caption', caption, title });
+						}
+						const small = await sharp(Buffer.from(img.data, 'base64')).resize(320, 320, { fit: 'inside' }).jpeg({ quality: 80 }).toBuffer();
+						sketch = 'data:image/jpeg;base64,' + small.toString('base64');
+						send({ type: 'sketch', image: sketch });
+						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal);
+					}
 					if (shaped.length < 3) throw new Error('Van deze tekening kon ik geen bouwwerk maken. Probeer het nog eens.');
 					// stream the bricks layer by layer so the build animation still plays
 					const delay = Math.max(8, Math.min(60, 9000 / shaped.length));
