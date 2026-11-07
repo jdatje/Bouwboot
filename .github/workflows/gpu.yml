@@ -1,0 +1,39 @@
+name: gpu
+on:
+  push:
+    branches: [main]
+    paths: ["gpu/**", ".github/workflows/gpu.yml"]
+  workflow_dispatch:
+    inputs:
+      captions:
+        description: "JSON list of English captions for the smoke test"
+        required: false
+        default: ""
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install -q modal requests matplotlib numpy
+      - name: Create GPU key secret on Modal
+        run: |
+          KEY=$(printf 'bouwboot:%s' "$MODAL_TOKEN_SECRET" | sha256sum | cut -d' ' -f1)
+          modal secret create bouwboot-gpu BOUWBOOT_GPU_KEY="$KEY" --force >/dev/null
+      - name: Deploy
+        run: |
+          modal deploy gpu/brickgpt_app.py 2>&1 | tee deploy.log
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.modal\.run' deploy.log | head -1)
+          echo "URL=$URL" >> $GITHUB_ENV
+          echo "GPU URL: $URL"
+      - name: Smoke test
+        env:
+          CAPTIONS: ${{ github.event.inputs.captions }}
+        run: python gpu/smoke_test.py "$URL"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: smoke, path: out/ }
