@@ -11,7 +11,7 @@
 	type Info = {
 		build: {
 			id: string; prompt: string; title: string; caption: string; bricks: Brick[]; saved: number;
-			assembled: number; only_mine: number; order_status: string | null;
+			assembled: number; only_mine: number; order_status: string | null; engine: string | null; sketch: string | null;
 			order_list: { part: string; color: number; qty: number; received: boolean }[] | null;
 		};
 		coverage: { have: number; total: number; missing: { part: string; color: number; qty: number }[] };
@@ -23,6 +23,7 @@
 	let phase = $state<'idle' | 'thinking' | 'building' | 'painting' | 'done' | 'error'>('idle');
 	let message = $state('');
 	let liveTitle = $state('');
+	let sketch = $state<string | null>(null);
 	let liveCount = $state(0);
 	let kid = $state(false);
 	let step = $state(0);
@@ -68,6 +69,7 @@
 		const r = await fetch(`/api/builds/${id}`);
 		if (!r.ok) { phase = 'error'; message = 'Dit bouwwerk bestaat niet (meer).'; return; }
 		info = await r.json();
+		sketch = info!.build.sketch;
 		step = 0;
 		phase = 'done';
 		scene!.setBricks(info!.build.bricks, (b) => hex(b.c));
@@ -81,7 +83,7 @@
 		abort = new AbortController();
 		const prompt = page.url.searchParams.get('q') ?? '';
 		const variation = Number(page.url.searchParams.get('v') ?? 0);
-		info = null; step = 0; tab = 'bouwen';
+		info = null; step = 0; tab = 'bouwen'; sketch = null;
 		phase = 'thinking'; message = ''; liveTitle = ''; liveCount = 0;
 		scene!.clear();
 		scene!.centreOn([{ h: 1, w: 1, x: 9, y: 9, z: 0 }]);
@@ -92,7 +94,7 @@
 			const res = await fetch('/api/design', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation }),
+				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined }),
 				signal: abort.signal
 			});
 			if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Je bent niet (meer) ingelogd.' : 'De server reageert niet.');
@@ -110,6 +112,7 @@
 					if (!line.startsWith('data: ')) continue;
 					const ev = JSON.parse(line.slice(6));
 					if (ev.type === 'caption') { liveTitle = ev.title; phase = 'building'; }
+					else if (ev.type === 'sketch') { sketch = ev.image; }
 					else if (ev.type === 'brick') {
 						const b = parseBrick(ev.b);
 						if (b) { live.push(b); scene!.add(b); liveCount = live.length; }
@@ -151,9 +154,11 @@
 		}
 	}
 
-	function reshape() {
+	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? '3d');
+	function reshape(otherEngine = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;
-		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&t=${Date.now()}`);
+		const m = otherEngine ? (engine === '3d' ? 'brickgpt' : '3d') : engine;
+		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&t=${Date.now()}`);
 	}
 
 	let recolorN = 1;
@@ -246,6 +251,9 @@
 					{/if}
 				</div>
 			{/if}
+			{#if sketch && step === 0}
+				<img class="sketch" src={sketch} alt="Schets" title="De schets waar dit bouwwerk op is gebaseerd" />
+			{/if}
 			{#if phase === 'done' && step === 0}
 				<button class="replay" onclick={replay} title="Opnieuw afspelen">▶ Afspelen</button>
 			{/if}
@@ -268,7 +276,7 @@
 		</div>
 		{#if info}
 			<div class="actions">
-				<button onclick={reshape} disabled={!!busy}>Andere vorm</button>
+				<button onclick={() => reshape()} disabled={!!busy}>Andere vorm</button>
 				<button onclick={recolor} disabled={!!busy}>{busy === 'kleuren' ? 'Kleuren kiezen…' : 'Andere kleuren'}</button>
 				{#if info.build.saved}
 					<button disabled>Bewaard ✓</button>
@@ -293,6 +301,10 @@
 					<button class="link" onclick={remove}>Verwijderen</button>
 				</div>
 			{/if}
+			<p class="small muted method">
+				Gebouwd {engine === '3d' ? 'via een schets en een 3D-model' : 'met BrickGPT (tekst → stenen)'} ·
+				<button class="link plain" onclick={() => reshape(true)} disabled={!!busy}>probeer de andere bouwmethode</button>
+			</p>
 		{/if}
 	</section>
 
@@ -404,6 +416,9 @@
 	.overlay .nav:not(.primary) { background: rgba(255,255,255,.95); }
 	.oparts { flex: 1; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.35rem 0.7rem; background: rgba(255,255,255,.92); border-radius: 14px; padding: 0.4rem 0.6rem; min-height: 52px; font-weight: 700; }
 	.oparts span { display: inline-flex; align-items: center; gap: 0.25rem; }
+	.sketch { position: absolute; left: 0.8rem; top: 0.8rem; width: 110px; height: 110px; object-fit: contain; background: white; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
+	.method { margin-top: 1rem; }
+	button.plain { color: #0a5bd3; font-weight: 500; }
 	.replay { position: absolute; right: 0.8rem; bottom: 0.8rem; background: rgba(255,255,255,.9); }
 	.headline h1 { margin: 0.9rem 0 0.1rem; font-size: 1.7rem; }
 	.small { font-size: 0.88rem; }

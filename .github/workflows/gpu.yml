@@ -34,6 +34,7 @@ jobs:
           modal secret create bouwboot-gpu BOUWBOOT_GPU_KEY="$KEY" --force >/dev/null
       - name: Deploy
         run: |
+          set -o pipefail
           modal deploy gpu/brickgpt_app.py 2>&1 | tee deploy.log
           URL=$(grep -oE 'https://[a-zA-Z0-9.-]+designer-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
           URL3D=$(grep -oE 'https://[a-zA-Z0-9.-]+shaper-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)

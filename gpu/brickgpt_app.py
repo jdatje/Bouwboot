@@ -72,7 +72,7 @@ def download_triposr():
 # TripoSR (MIT) turns one picture into a 3D shape. torchmcubes is only needed for mesh export,
 # which we skip (we sample the shape on a grid), so a stub stands in for it.
 image3d = (
-    modal.Image.debian_slim(python_version="3.10")
+    modal.Image.debian_slim(python_version="3.11")
     .apt_install("git", "libgl1", "libglib2.0-0")
     .pip_install(
         "torch==2.1.2", "torchvision==0.16.2", "numpy<2", "transformers==4.35.0", "huggingface_hub<0.26",
@@ -276,6 +276,7 @@ class Shaper:
             image: str  # base64 PNG/JPEG
             palette: list[dict]  # [{id, hex}]
             max_studs: int = 20
+            sizes: list[str] | None = None  # e.g. ["2x4", "1x2"]; None = all
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -300,7 +301,10 @@ class Shaper:
                 codes = self.model([img], device="cuda")
             occ, col = sample_grid(self.model, codes[0])
             t1 = time.time()
-            bricks = shape_to_bricks(occ, col, req.palette, max_studs=max(8, min(req.max_studs, 28)))
+            sizes = None
+            if req.sizes:
+                sizes = [tuple(sorted(map(int, x.lower().split("x")))) for x in req.sizes]
+            bricks = shape_to_bricks(occ, col, req.palette, max_studs=max(8, min(req.max_studs, 28)), sizes=sizes)
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks)}
             print("shape", stats, flush=True)
             return {"bricks": bricks, "stats": stats}

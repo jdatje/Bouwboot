@@ -183,3 +183,32 @@ function mock(parts: Part[]): unknown {
 	}
 	return { bricks: [{ box: [100, 100, 300, 400], size: '2x4', color: 'Rood' }] };
 }
+
+/** Draws the requested thing as a simple toy on a white background (for the 3D route). Returns base64. */
+export async function drawToy(prompt: string, variation: number): Promise<{ data: string; mime: string }> {
+	if (process.env.MOCK_GEMINI) {
+		const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
+		return { data: png, mime: 'image/png' };
+	}
+	const key = process.env.GEMINI_API_KEY;
+	if (!key) throw new Error('GEMINI_API_KEY ontbreekt');
+	const text = `Draw: ${prompt}.
+Make it a single object, designed as a simple chunky toy with big clear shapes, shown in full in a
+three-quarter view from slightly above, centred, on a plain pure white background. No shadow, no text,
+no stand or base, no other objects. Bright, solid colours.${variation > 0 ? ` Variation #${variation}: a clearly different pose or design.` : ''}`;
+	const models = [process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
+	let last = '';
+	for (const m of models) {
+		const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+			method: 'POST',
+			headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+			body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text }] }], generationConfig: { responseModalities: ['IMAGE'] } })
+		});
+		if (!res.ok) { last = `${m} ${res.status}`; continue; }
+		const j = await res.json();
+		for (const p of j.candidates?.[0]?.content?.parts ?? [])
+			if (p.inlineData?.data) return { data: p.inlineData.data, mime: p.inlineData.mimeType ?? 'image/png' };
+		last = `${m}: geen afbeelding`;
+	}
+	throw new Error('Tekenen mislukt (' + last + ')');
+}

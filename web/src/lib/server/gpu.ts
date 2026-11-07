@@ -64,3 +64,32 @@ export async function* generate(
 		}
 	}
 }
+
+const URL3D = () =>
+	(process.env.GPU_URL_3D || URL().replace('-designer-web', '-shaper-web')).replace(/\/$/, '');
+
+export type ShapeBrick = { h: number; w: number; x: number; y: number; z: number; c: number };
+
+/** Picture → 3D shape → coloured bricks (TripoSR on Modal). */
+export async function shape(
+	imageB64: string,
+	palette: { id: number; hex: string }[],
+	sizes: string[] | null,
+	signal?: AbortSignal
+): Promise<ShapeBrick[]> {
+	if (process.env.MOCK_GPU) {
+		const out: ShapeBrick[] = [];
+		for (let z = 0; z < 5; z++)
+			for (let x = 0; x < 16; x += 4)
+				for (let y = 0; y < 6; y += 2) out.push({ h: 4, w: 2, x: x + (z % 2) * 2 > 12 ? x : x + (z % 2) * 2, y, z, c: palette[(x + z) % palette.length].id });
+		return out;
+	}
+	const res = await fetch(URL3D() + '/shape', {
+		method: 'POST',
+		headers: { 'content-type': 'application/json', authorization: `Bearer ${gpuKey()}` },
+		body: JSON.stringify({ image: imageB64, palette, sizes }),
+		signal
+	});
+	if (!res.ok) throw new Error(`3D ${res.status}: ${(await res.text()).slice(0, 200)}`);
+	return (await res.json()).bricks;
+}

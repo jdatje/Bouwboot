@@ -103,9 +103,13 @@ def smooth_labels(lab, vox, passes=1):
     return lab
 
 
-def brickify(vox, lab):
-    """Tiles each layer with bricks of one colour. Returns list of (h, w, x, y, z, label)."""
+def brickify(vox, lab, sizes=None):
+    """Tiles each layer with bricks of one colour. Returns list of (h, w, x, y, z, label).
+    `sizes` limits the brick sizes (1x1 is always kept as a last resort, but avoided)."""
     X, Y, Z = vox.shape
+    use = [s for s in SIZES if sizes is None or s in sizes]
+    if (1, 1) not in use:
+        use.append((1, 1))
     owner = -np.ones((X, Y, Z), int)
     bricks = []
     for k in range(Z):
@@ -116,7 +120,7 @@ def brickify(vox, lab):
                     continue
                 c = lab[i, j, k]
                 best, best_score = None, -1e9
-                for a, b in SIZES:
+                for a, b in use:
                     for (h, w) in {(a, b), (b, a)}:
                         if i + h > X or j + w > Y:
                             continue
@@ -126,6 +130,8 @@ def brickify(vox, lab):
                         below = len(set(owner[i:i + h, j:j + w, k - 1].ravel()) - {-1}) if k > 0 else 0
                         long_x = h > w
                         score = h * w * 10 + below * 6 + (2 if long_x == prefer_x and h != w else 0)
+                        if sizes is not None and (a, b) not in sizes:
+                            score -= 1000
                         if score > best_score:
                             best, best_score = (h, w), score
                 h, w = best
@@ -155,7 +161,7 @@ def keep_grounded(bricks, owner):
     return [b for bi, b in enumerate(bricks) if find(bi) == g]
 
 
-def shape_to_bricks(occ, col, palette, max_studs=20):
+def shape_to_bricks(occ, col, palette, max_studs=20, sizes=None):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs)
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])
@@ -163,7 +169,7 @@ def shape_to_bricks(occ, col, palette, max_studs=20):
     idx = np.argwhere(vox)
     lab[tuple(idx.T)] = nearest(vcol[tuple(idx.T)], pal_rgb)
     lab = smooth_labels(lab, vox)
-    bricks, owner = brickify(vox, lab)
+    bricks, owner = brickify(vox, lab, sizes)
     bricks = keep_grounded(bricks, owner)
     bricks.sort(key=lambda b: (b[4], b[2], b[3]))
     return [{"h": h, "w": w, "x": x, "y": y, "z": z, "c": palette[l]["id"]} for h, w, x, y, z, l in bricks]

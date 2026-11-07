@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS colors (
 );
 CREATE TABLE IF NOT EXISTS kv (k TEXT PRIMARY KEY, v TEXT);
 `);
-try { db.exec('ALTER TABLE builds ADD COLUMN thumb TEXT'); } catch {}
+for (const col of ['thumb TEXT', "engine TEXT DEFAULT 'brickgpt'", 'sketch TEXT'])
+	try { db.exec('ALTER TABLE builds ADD COLUMN ' + col); } catch {}
 
 export type BuildRow = {
 	id: string;
@@ -76,6 +77,8 @@ export type BuildRow = {
 	order_list: string | null;
 	created_at: number;
 	thumb: string | null;
+	engine: string | null;
+	sketch: string | null;
 };
 
 export type Build = Omit<BuildRow, 'bricks' | 'order_list'> & {
