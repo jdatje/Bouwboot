@@ -9,6 +9,14 @@ on:
         description: "JSON list of English captions for the smoke test"
         required: false
         default: ""
+      subjects:
+        description: "JSON list of subjects for the 3D smoke test"
+        required: false
+        default: ""
+      skip_brickgpt:
+        description: "skip the BrickGPT smoke test"
+        required: false
+        default: ""
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -27,10 +35,18 @@ jobs:
       - name: Deploy
         run: |
           modal deploy gpu/brickgpt_app.py 2>&1 | tee deploy.log
-          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+\.modal\.run' deploy.log | head -1)
+          URL=$(grep -oE 'https://[a-zA-Z0-9.-]+designer-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
+          URL3D=$(grep -oE 'https://[a-zA-Z0-9.-]+shaper-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
           echo "URL=$URL" >> $GITHUB_ENV
-          echo "GPU URL: $URL"
-      - name: Smoke test
+          echo "URL3D=$URL3D" >> $GITHUB_ENV
+          echo "GPU URLs: $URL $URL3D"
+      - name: Smoke test 3D route
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUBJECTS: ${{ github.event.inputs.subjects }}
+        run: python gpu/smoke_shape.py "$URL3D"
+      - name: Smoke test BrickGPT
+        if: ${{ github.event.inputs.skip_brickgpt == '' }}
         env:
           CAPTIONS: ${{ github.event.inputs.captions }}
         run: python gpu/smoke_test.py "$URL"

@@ -59,6 +59,36 @@ image = (
 
 app = modal.App("bouwboot-gpu", image=image)
 
+TRIPOSR_COMMIT = "107cefdc244c39106fa830359024f6a2f1c78871"
+
+
+def download_triposr():
+    import rembg
+    from tsr.system import TSR
+    TSR.from_pretrained("stabilityai/TripoSR", config_name="config.yaml", weight_name="model.ckpt")
+    rembg.new_session()
+
+
+# TripoSR (MIT) turns one picture into a 3D shape. torchmcubes is only needed for mesh export,
+# which we skip (we sample the shape on a grid), so a stub stands in for it.
+image3d = (
+    modal.Image.debian_slim(python_version="3.10")
+    .apt_install("git", "libgl1", "libglib2.0-0")
+    .pip_install(
+        "torch==2.1.2", "torchvision==0.16.2", "numpy<2", "transformers==4.35.0", "huggingface_hub<0.26",
+        "omegaconf==2.3.0", "einops==0.7.0", "trimesh==4.0.5", "Pillow==10.1.0", "rembg==2.0.56",
+        "onnxruntime==1.17.3", "fastapi[standard]",
+    )
+    .run_commands(
+        "git clone https://github.com/VAST-AI-Research/TripoSR /opt/TripoSR",
+        f"cd /opt/TripoSR && git checkout {TRIPOSR_COMMIT}",
+        "mkdir -p /opt/stubs && echo 'def marching_cubes(*a, **k):\n    raise NotImplementedError' > /opt/stubs/torchmcubes.py",
+    )
+    .env({"PYTHONPATH": "/opt/TripoSR:/opt/stubs:/root"})
+    .run_function(download_triposr)
+    .add_local_python_source("shape3d")
+)
+
 
 class FastEngine:
     """BrickGPT inference, rewritten for speed but with the same rules as the original:
@@ -211,6 +241,71 @@ class FastEngine:
         stats["seconds"] = round(time.time() - t0, 1)
         stats["tokens"] = len(self.hist) - prompt_len
         return bricks, stats
+
+
+@app.cls(gpu="T4", image=image3d, scaledown_window=300, timeout=300,
+         secrets=[modal.Secret.from_name("bouwboot-gpu")])
+class Shaper:
+    @modal.enter()
+    def load(self):
+        import rembg
+        from tsr.system import TSR
+        self.model = TSR.from_pretrained("stabilityai/TripoSR", config_name="config.yaml", weight_name="model.ckpt")
+        self.model.renderer.set_chunk_size(65536)
+        self.model.to("cuda")
+        self.rembg = rembg.new_session()
+
+    @modal.asgi_app()
+    def web(self):
+        import base64
+        import hmac
+        import io
+        import time
+        import numpy as np
+        import torch
+        from fastapi import FastAPI, Header, HTTPException
+        from PIL import Image
+        from pydantic import BaseModel
+        from tsr.utils import remove_background, resize_foreground
+        from shape3d import sample_grid, shape_to_bricks
+
+        api = FastAPI()
+        key = os.environ["BOUWBOOT_GPU_KEY"]
+
+        class Req(BaseModel):
+            image: str  # base64 PNG/JPEG
+            palette: list[dict]  # [{id, hex}]
+            max_studs: int = 20
+
+        def check(auth):
+            if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
+                raise HTTPException(401, "unauthorized")
+
+        @api.get("/health")
+        def health(authorization: str | None = Header(None)):
+            check(authorization)
+            return {"ok": True}
+
+        @api.post("/shape")
+        def shape(req: Req, authorization: str | None = Header(None)):
+            check(authorization)
+            t0 = time.time()
+            img = Image.open(io.BytesIO(base64.b64decode(req.image))).convert("RGB")
+            img = remove_background(img, self.rembg)
+            img = resize_foreground(img, 0.85)
+            a = np.array(img).astype(np.float32) / 255.0
+            a = a[:, :, :3] * a[:, :, 3:4] + (1 - a[:, :, 3:4]) * 0.5
+            img = Image.fromarray((a * 255.0).astype(np.uint8))
+            with torch.no_grad():
+                codes = self.model([img], device="cuda")
+            occ, col = sample_grid(self.model, codes[0])
+            t1 = time.time()
+            bricks = shape_to_bricks(occ, col, req.palette, max_studs=max(8, min(req.max_studs, 28)))
+            stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks)}
+            print("shape", stats, flush=True)
+            return {"bricks": bricks, "stats": stats}
+
+        return api
 
 
 @app.cls(gpu="T4", scaledown_window=300, timeout=900,
