@@ -60,75 +60,157 @@ image = (
 app = modal.App("bouwboot-gpu", image=image)
 
 
-def make_engine():
-    import copy
-    from collections import Counter
-    from brickgpt.models import BrickGPT, BrickGPTConfig
-    from brickgpt.data import BrickStructure, Brick
+class FastEngine:
+    """BrickGPT inference, rewritten for speed but with the same rules as the original:
+    constrained brick syntax, rejection sampling (collisions, bounds, repeats) and
+    connectivity-based rollback. Uses direct forward passes with a KV cache that is cropped
+    on rejection instead of deep-copied, which is many times faster than generate() per token.
+    """
 
-    class StreamingBrickGPT(BrickGPT):
-        """BrickGPT that reports every placed brick and every rollback through a callback."""
+    def __init__(self):
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from brickgpt.data import max_brick_dimension
 
-        allowed_dims = None  # set of (h, w) with h <= w, or None for all
+        self.torch = torch
+        self.tok = AutoTokenizer.from_pretrained(MODEL_DIR)
+        self.model = AutoModelForCausalLM.from_pretrained(MODEL_DIR, torch_dtype=torch.float16).to("cuda").eval()
 
-        def _try_adding_brick_ext(self, brick_str, bricks, rejected):
-            r = BrickGPT._try_adding_brick(brick_str, bricks, rejected)
-            if r == "success" and self.allowed_dims is not None:
-                b = Brick.from_txt(brick_str)
-                if (min(b.h, b.w), max(b.h, b.w)) not in self.allowed_dims:
-                    return "not_allowed"
-            return r
+        def ids(strs):
+            out = []
+            for s in strs:
+                t = self.tok.tokenize(s)
+                assert len(t) == 1, f"{s!r} is not one token: {t}"
+                out.append(self.tok.convert_tokens_to_ids(t[0]))
+            return torch.tensor(out, device="cuda")
 
-        def generate_brick_with_rejection_sampling(self, prompt=None, bricks=BrickStructure([])):
-            rejection_reasons, rejected = Counter(), set()
-            brick, temperature = "", self.temperature
-            for n in range(self.max_brick_rejections + 1):
-                self.llm.save_state()
-                brick = self.generate_brick(prompt, temperature=temperature)
-                if not brick:
+        dims = [str(i) for i in range(1, max_brick_dimension + 1)]
+        posns = [str(i) for i in range(20)]
+        self.eos = self.tok.eos_token_id
+        self.slots = [ids(dims + [self.tok.eos_token]), ids(["x"]), ids(dims), ids([" ("]), ids(posns),
+                      ids([","]), ids(posns), ids([","]), ids(posns), ids([")\n"])]
+        self.slot_strs = None
+
+    # --- low level -------------------------------------------------------------------------
+    def _forward(self, token_ids):
+        torch = self.torch
+        x = torch.tensor([token_ids], device="cuda")
+        with torch.no_grad():
+            out = self.model(input_ids=x, past_key_values=self.cache, use_cache=True)
+        self.cache = out.past_key_values
+        self.logits = out.logits[0, -1].float()
+        self.hist.extend(token_ids)
+
+    def _crop(self, length):
+        """Rewinds to `length` tokens and recomputes the logits after the last kept token."""
+        self.cache.crop(length - 1)
+        last = self.hist[length - 1]
+        del self.hist[length - 1:]
+        self._forward([last])
+
+    def _sample(self, allowed, temperature):
+        torch = self.torch
+        l = self.logits[allowed] / max(temperature, 1e-3)
+        p = torch.softmax(l, dim=-1)
+        return int(allowed[torch.multinomial(p, 1)].item())
+
+    def _gen_brick(self, temperature):
+        toks = []
+        for i, allowed in enumerate(self.slots):
+            t = self._sample(allowed, temperature)
+            if t == self.eos:
+                return ""
+            toks.append(t)
+            self._forward([t])
+        return self.tok.decode(toks)
+
+    # --- brick rules -----------------------------------------------------------------------
+    def _check(self, txt, bricks, rejected, allowed_dims):
+        from brickgpt.data import Brick
+        if txt in rejected:
+            return "already_rejected", None
+        try:
+            b = Brick.from_txt(txt)
+        except ValueError:
+            return "ill_formatted", None
+        try:
+            _ = b.brick_id
+        except ValueError:
+            return "not_in_library", None
+        if allowed_dims is not None and (min(b.h, b.w), max(b.h, b.w)) not in allowed_dims:
+            return "not_allowed", None
+        if not bricks.brick_in_bounds(b):
+            return "out_of_bounds", None
+        if bricks.brick_collides(b):
+            return "collision", None
+        return "success", b
+
+    def _next_brick(self, bricks, allowed_dims, stats, max_rejections=150):
+        rejected, temperature = set(), 0.6
+        for n in range(max_rejections + 1):
+            length, logits = len(self.hist), self.logits.clone()
+            txt = self._gen_brick(temperature)
+            stats["attempts"] += 1
+            if not txt:
+                return None
+            res, b = self._check(txt, bricks, rejected, allowed_dims)
+            if res == "success":
+                return b
+            stats[res] = stats.get(res, 0) + 1
+            # rewind the tokens of the rejected brick
+            self.cache.crop(length)
+            del self.hist[length:]
+            self.logits = logits
+            rejected.add(txt)
+            if res == "already_rejected":
+                temperature = min(2.0, temperature + 0.01)
+        return None
+
+    @staticmethod
+    def _trim_unstable(bricks):
+        import numpy as np
+        from brickgpt.data import BrickStructure
+        while not bricks.is_connected():
+            scores = bricks.connectivity_scores()
+            idx = next((i for i, b in enumerate(bricks.bricks) if np.any(scores[b.slice] >= 1)), -1)
+            bricks = BrickStructure(bricks.bricks[:idx])
+        return bricks
+
+    def stream(self, caption, emit, max_bricks=400, allowed_dims=None, max_regenerations=20):
+        import time
+        from transformers.cache_utils import DynamicCache
+        from brickgpt.data import BrickStructure
+        from brickgpt.models.brickgpt import create_instruction
+
+        t0 = time.time()
+        msgs = [{"role": "system", "content": "You are a helpful assistant."},
+                {"role": "user", "content": create_instruction(caption)}]
+        prompt = self.tok.apply_chat_template(msgs, add_generation_prompt=True)
+        self.cache, self.hist = DynamicCache(), []
+        self._forward(list(prompt))
+        prompt_len = len(self.hist)
+
+        bricks, ends = BrickStructure([]), []
+        stats = {"attempts": 0, "regenerations": 0}
+        for regen in range(max_regenerations + 1):
+            while len(bricks) < max_bricks:
+                b = self._next_brick(bricks, allowed_dims, stats)
+                if b is None:
                     break
-                res = self._try_adding_brick_ext(brick, bricks, rejected)
-                if res == "success" or n == self.max_brick_rejections:
-                    break
-                self.llm.rollback_to_saved_state()
-                rejection_reasons.update([res])
-                rejected.add(brick)
-                if res == "already_rejected":
-                    temperature = min(self.max_temperature, temperature + self.temperature_increase)
-            return brick, rejection_reasons
-
-        def stream(self, caption, emit, max_bricks):
-            starting = BrickStructure([])
-            for regen in range(self.max_regenerations + 1):
-                bricks = copy.deepcopy(starting)
-                msgs = [{"role": "system", "content": "You are a helpful assistant."},
-                        {"role": "user", "content": self.instruction_fn(caption)}]
-                txt = bricks.to_txt()
-                if txt:
-                    msgs.append({"role": "assistant", "content": txt})
-                    prompt = self.llm.tokenizer.apply_chat_template(msgs, continue_final_message=True, return_tensors="pt")
-                else:
-                    prompt = self.llm.tokenizer.apply_chat_template(msgs, add_generation_prompt=True, return_tensors="pt")
-                for i in range(max_bricks - len(bricks)):
-                    b, _ = self.generate_brick_with_rejection_sampling(prompt if i == 0 else None, bricks=bricks)
-                    if not b:
-                        break
-                    try:
-                        brick = Brick.from_txt(b)
-                        if bricks.brick_collides(brick) or not bricks.brick_in_bounds(brick):
-                            continue
-                    except ValueError:
-                        continue
-                    bricks.add_brick(brick)
-                    emit({"type": "brick", "b": brick.to_txt().strip()})
-                if self.max_regenerations == 0 or self._is_stable(bricks) or regen == self.max_regenerations:
-                    return bricks
-                starting = self._remove_all_bricks_after_first_unstable_brick(bricks)
-                emit({"type": "rollback", "keep": len(starting)})
-            return bricks
-
-    cfg = BrickGPTConfig(MODEL_DIR, use_gurobi=False, max_regenerations=20, max_brick_rejections=200)
-    return StreamingBrickGPT(cfg)
+                bricks.add_brick(b)
+                ends.append(len(self.hist))
+                emit({"type": "brick", "b": b.to_txt().strip()})
+            if bricks.is_connected() or regen == max_regenerations:
+                break
+            kept = self._trim_unstable(bricks)
+            k = len(kept)
+            stats["regenerations"] += 1
+            bricks, ends = BrickStructure(kept.bricks), ends[:k]
+            self._crop(ends[-1] if k else prompt_len)
+            emit({"type": "rollback", "keep": k})
+        stats["seconds"] = round(time.time() - t0, 1)
+        stats["tokens"] = len(self.hist) - prompt_len
+        return bricks, stats
 
 
 @app.cls(gpu="T4", scaledown_window=300, timeout=900,
@@ -136,7 +218,7 @@ def make_engine():
 class Designer:
     @modal.enter()
     def load(self):
-        self.engine = make_engine()
+        self.engine = FastEngine()
 
     @modal.asgi_app()
     def web(self):
@@ -173,15 +255,15 @@ class Designer:
             def run():
                 try:
                     torch.manual_seed(req.seed)
-                    eng.allowed_dims = None
+                    dims = None
                     if req.allowed:
                         dims = set()
                         for s in req.allowed:
                             h, w = map(int, s.lower().split("x"))
                             dims.add((min(h, w), max(h, w)))
-                        eng.allowed_dims = dims
-                    bricks = eng.stream(req.caption, q.put, max(10, min(req.max_bricks, 1200)))
-                    q.put({"type": "done", "bricks": [l for l in bricks.to_txt().split("\n") if l.strip()]})
+                    bricks, stats = eng.stream(req.caption, q.put, max(10, min(req.max_bricks, 1200)), dims)
+                    print("generated", req.caption[:60], stats, flush=True)
+                    q.put({"type": "done", "bricks": [l for l in bricks.to_txt().split("\n") if l.strip()], "stats": stats})
                 except Exception as e:  # report instead of hanging the stream
                     q.put({"type": "error", "message": repr(e)})
                 q.put(None)

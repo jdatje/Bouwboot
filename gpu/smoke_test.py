@@ -27,7 +27,7 @@ for i, cap in enumerate(captions):
         for line in resp.iter_lines():
             if line.startswith(b"data: "):
                 ev = json.loads(line[6:]); events.append(ev["type"])
-                if ev["type"] == "done": bricks = ev["bricks"]
+                if ev["type"] == "done": bricks = ev["bricks"]; print("   stats", ev.get("stats"), flush=True)
                 if ev["type"] == "error": print("ERROR", ev)
     dt = time.time() - t
     print(f"[{i}] {cap!r}: {len(bricks)} bricks in {dt:.1f}s; events: brick={events.count('brick')} rollback={events.count('rollback')}")
