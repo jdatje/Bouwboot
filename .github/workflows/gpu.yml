@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -q modal requests matplotlib numpy
+      - run: pip install -q modal requests matplotlib numpy pillow
       - name: Create GPU key secret on Modal
         run: |
           KEY=$(printf 'bouwboot:%s' "$MODAL_TOKEN_SECRET" | sha256sum | cut -d' ' -f1)

@@ -1,6 +1,7 @@
 """Gemini draws a toy, TripoSR makes it 3D, we turn it into bricks; renders the result."""
 import base64, hashlib, json, os, sys, time, re
 import requests
+import io
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -49,7 +50,8 @@ for i, s in enumerate(subjects):
     for b in bricks:
         g[b["x"]:b["x"]+b["h"], b["y"]:b["y"]+b["w"], b["z"]] = True; c[b["x"]:b["x"]+b["h"], b["y"]:b["y"]+b["w"], b["z"]] = hexof[b["c"]]
     fig = plt.figure(figsize=(12, 4))
-    ax0 = fig.add_subplot(1, 3, 1); ax0.imshow(plt.imread(f"out/s{i}.png")); ax0.axis("off")
+    from PIL import Image
+    ax0 = fig.add_subplot(1, 3, 1); ax0.imshow(Image.open(f"out/s{i}.png")); ax0.axis("off")
     for k, az in enumerate([-60, 30]):
         ax = fig.add_subplot(1, 3, k + 2, projection="3d")
         ax.voxels(g, facecolors=c, edgecolor="k", linewidth=0.15); ax.view_init(22, az)

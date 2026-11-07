@@ -6,6 +6,10 @@ on:
         description: "JSON list of Dutch prompts"
         required: false
         default: ""
+      engines:
+        description: "comma separated: 3d,brickgpt"
+        required: false
+        default: "3d,brickgpt"
 jobs:
   e2e:
     runs-on: ubuntu-latest
@@ -30,6 +34,7 @@ jobs:
       - name: Run
         env:
           PROMPTS: ${{ github.event.inputs.prompts }}
+          ENGINES: ${{ github.event.inputs.engines }}
         run: python tests/e2e.py
       - if: always()
         run: cp /tmp/server.log e2e/ 2>/dev/null || true

@@ -26,13 +26,13 @@ with sync_playwright() as p:
     pg = b.new_page(viewport={"width": 1366, "height": 860})
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
-    for i, q in enumerate(prompts):
+    engines = (os.environ.get("ENGINES") or "3d,brickgpt").split(",")
+    runs = [(q, m) for q in prompts for m in engines]
+    for i, (q, m) in enumerate(runs):
         t = time.time()
-        pg.goto(base + "/")
-        pg.fill("input[aria-label='Wat wil je bouwen?']", q)
-        pg.keyboard.press("Enter")
+        pg.goto(base + "/bouwwerk/nieuw?q=" + urllib.request.quote(q) + f"&m={m}&t={i}")
         shots = 0
-        while time.time() - t < 900:
+        while time.time() - t < 300:
             if pg.locator("text=Andere vorm").count() or pg.locator(".status.err").count():
                 break
             if time.time() - t > 20 * (shots + 1) and shots < 4:
@@ -43,16 +43,16 @@ with sync_playwright() as p:
         status = pg.locator(".status").inner_text() if pg.locator(".status").count() else "ok"
         title = pg.locator("h1").first.inner_text()
         have = pg.locator(".have").inner_text() if pg.locator(".have").count() else ""
-        report.append(f"[{q}] {time.time() - t:.0f}s title={title!r} status={status!r} {have}")
-        if pg.locator("text=Andere kleuren").count():
+        report.append(f"[{q} / {m}] {time.time() - t:.0f}s title={title!r} status={status!r} {have}")
+        if i < 2 and pg.locator("text=Andere kleuren").count():
             pg.click("text=Andere kleuren"); time.sleep(12)
             pg.screenshot(path=f"{out}/{i}-recolor.png")
             pg.click("text=Begin met bouwen"); time.sleep(1.5)
             pg.screenshot(path=f"{out}/{i}-step1.png")
     # only-my-bricks design
-    pg.goto(base + "/bouwwerk/nieuw?q=" + urllib.request.quote("een klein huisje") + "&mijn=1&t=1")
+    pg.goto(base + "/bouwwerk/nieuw?q=" + urllib.request.quote("een klein huisje") + "&mijn=1&m=3d&t=x")
     t = time.time()
-    while time.time() - t < 900 and not (pg.locator("text=Andere vorm").count() or pg.locator(".status.err").count()):
+    while time.time() - t < 300 and not (pg.locator("text=Andere vorm").count() or pg.locator(".status.err").count()):
         time.sleep(2)
     time.sleep(3)
     pg.screenshot(path=f"{out}/mine-done.png")
