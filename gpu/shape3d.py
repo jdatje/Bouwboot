@@ -200,6 +200,8 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=6):
     cl, means = quantize(vcol[tuple(idx.T)], k=max_colors)
     # each main colour → closest Lego colour (in Lab, so it looks right to the eye)
     ml = to_lab(means)
+    # the 3D model renders colours a bit dull and dark; nudge them back towards the drawing
+    ml = ml * np.array([1.0, 1.15, 1.15]) + np.array([7.0, 0, 0])
     cl_to_pal = ((ml[:, None, :] - pal_lab[None]) ** 2).sum(-1).argmin(1)
     lab[tuple(idx.T)] = cl_to_pal[cl]
     lab = smooth_labels(lab, vox, passes=2)

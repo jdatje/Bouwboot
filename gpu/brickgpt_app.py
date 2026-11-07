@@ -291,7 +291,7 @@ class Shaper:
         class Req(BaseModel):
             image: str  # base64 PNG/JPEG
             palette: list[dict]  # [{id, hex}]
-            max_studs: int = 20
+            max_studs: int = 16
             sizes: list[str] | None = None  # e.g. ["2x4", "1x2"]; None = all
 
         def check(auth):
