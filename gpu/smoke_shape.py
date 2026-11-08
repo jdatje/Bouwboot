@@ -37,9 +37,12 @@ def draw(subject):
     raise SystemExit("no image")
 
 print(requests.get(url + "/health", headers=H, timeout=600).text)
-subjects = json.loads(os.environ.get("SUBJECTS") or "[]") or ["a small motorboat", "crocodile", "dog", "small house"]
+subjects = json.loads(os.environ.get("SUBJECTS") or "[]")
+# without SUBJECTS the saved drawings in gpu/fixtures are used (no Gemini cost)
+fixtures = {} if subjects else {n: f"gpu/fixtures/{n}.png" for n in ["boat", "crocodile", "dog", "house"]}
+subjects = subjects or list(fixtures)
 for i, s in enumerate(subjects):
-    img = draw(s)
+    img = base64.b64encode(open(fixtures[s], "rb").read()).decode() if s in fixtures else draw(s)
     open(f"out/{PRE}s{i}.png", "wb").write(base64.b64decode(img))
     t = time.time()
     r = requests.post(url + "/shape", headers=H, json={"image": img, "palette": palette, "plates": PLATES}, timeout=900)
