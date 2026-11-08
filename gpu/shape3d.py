@@ -8,7 +8,10 @@ import numpy as np
 
 # brick sizes (short, long) that exist in the library, biggest first
 SIZES = [(2, 6), (2, 4), (1, 8), (1, 6), (2, 2), (1, 4), (1, 2), (1, 1)]
+# plates (a third of a brick high) that are easy to get
+PLATE_SIZES = [(2, 8), (2, 6), (2, 4), (1, 8), (1, 6), (2, 3), (2, 2), (1, 4), (1, 3), (1, 2), (1, 1)]
 LAYER = 1.2  # brick height in studs
+PLATE = 0.4  # plate height in studs
 
 
 def hex_rgb(h):
@@ -37,7 +40,7 @@ def sample_grid(model, scene_code, res=96, threshold=25.0, device="cuda"):
     return dens > threshold, col
 
 
-def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600):
+def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600, layer=LAYER):
     """Scales the shape so it fits in max_studs x max_studs x max_layers and returns
     voxels [X, Y, Z] (bool) and their colours [X, Y, Z, 3]."""
     idx = np.argwhere(occ)
@@ -49,7 +52,7 @@ def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600):
     # studs per grid cell
     s = min(max_studs / max(ex, ey), max_layers * LAYER / ez)
     while True:
-        X, Y, Z = max(1, round(ex * s)), max(1, round(ey * s)), max(1, round(ez * s / LAYER))
+        X, Y, Z = max(1, round(ex * s)), max(1, round(ey * s)), max(1, round(ez * s / layer))
         vox = np.zeros((X, Y, Z), bool)
         vcol = np.zeros((X, Y, Z, 3), np.float32)
         xs = np.linspace(0, ex, X + 1).astype(int)
@@ -64,7 +67,7 @@ def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600):
                         vox[i, j, k] = True
                         c = col[xs[i]:max(xs[i + 1], xs[i] + 1), ys[j]:max(ys[j + 1], ys[j] + 1), zs[k]:max(zs[k + 1], zs[k] + 1)]
                         vcol[i, j, k] = c[cell].mean(0)
-        if vox.sum() <= max_voxels or s < 0.2:
+        if vox.sum() * layer / LAYER <= max_voxels or s < 0.2:
             return vox, vcol
         s *= 0.9
 
@@ -175,6 +178,108 @@ def brickify(vox, lab, sizes=None):
     return bricks, owner
 
 
+def _tile_layer(region, lab, owner, k, below, use, idx0, height, prefer_x, sizes_penalty=None):
+    """Tiles the cells in `region` (2D bool) on plate-layer k with pieces of the given sizes.
+    Returns the new pieces as (h, w, x, y, z, height, label)."""
+    X, Y = region.shape
+    out = []
+    taken = np.zeros_like(region)
+    for i in range(X):
+        for j in range(Y):
+            if not region[i, j] or taken[i, j]:
+                continue
+            c = lab[i, j]
+            best, best_score = None, -1e9
+            for a, b in use:
+                for (h, w) in {(a, b), (b, a)}:
+                    if i + h > X or j + w > Y:
+                        continue
+                    reg = (slice(i, i + h), slice(j, j + w))
+                    if not region[reg].all() or taken[reg].any():
+                        continue
+                    wrong = int((lab[reg] != c).sum())
+                    if wrong and (h * w < 4 or wrong > 0.25 * h * w):
+                        continue
+                    nb = len(set(below[reg].ravel()) - {-1}) if below is not None else 0
+                    score = h * w * 10 + nb * 6 + (2 if (h > w) == prefer_x and h != w else 0) - wrong * 12
+                    if sizes_penalty and (a, b) in sizes_penalty:
+                        score -= 1000
+                    if score > best_score:
+                        best, best_score = (h, w), score
+            h, w = best
+            taken[i:i + h, j:j + w] = True
+            lab[i:i + h, j:j + w] = c
+            out.append((h, w, i, j, k, height, int(c)))
+    return out
+
+
+def brickify_plates(vox, lab, sizes=None):
+    """Plate-layer grid (3 layers per brick). Where a column is solid for a whole brick band
+    (and one colour), use bricks; elsewhere plates. Returns pieces (h, w, x, y, z, height, label)
+    with z and height in plate units, and an owner grid."""
+    X, Y, Z = vox.shape
+    lab = lab.copy()
+    owner = -np.ones((X, Y, Z), int)
+    pieces = []
+    use_b = [s for s in SIZES if sizes is None or s in sizes] or [(1, 1)]
+    use_p = [s for s in PLATE_SIZES if sizes is None or ("p", s) in sizes] if sizes is not None else PLATE_SIZES
+    pen_p = None
+    if not use_p:  # no plates owned: allow them, but only as a last resort
+        use_p, pen_p = [(1, 1), (1, 2)], {(1, 1), (1, 2)}
+    for band in range(0, Z, 3):
+        prefer_x = (band // 3) % 2 == 0
+        full = np.ones((X, Y), bool)
+        for d in range(3):
+            if band + d < Z:
+                full &= vox[:, :, band + d]
+                if d:
+                    full &= lab[:, :, band + d] == lab[:, :, band]
+            else:
+                full &= False
+        below = owner[:, :, band - 1] if band > 0 else None
+        if full.any():
+            lab2 = lab[:, :, band + 1].copy() if band + 1 < Z else lab[:, :, band].copy()
+            new = _tile_layer(full, lab2, owner, band, below, use_b, len(pieces), 3, prefer_x)
+            for h, w, x, y, z, ht, c in new:
+                owner[x:x + h, y:y + w, z:z + 3] = len(pieces)
+                lab[x:x + h, y:y + w, z:z + 3] = c
+                pieces.append((h, w, x, y, z, 3, c))
+        for d in range(3):
+            k = band + d
+            if k >= Z:
+                break
+            rest = vox[:, :, k] & (owner[:, :, k] < 0)
+            if not rest.any():
+                continue
+            below = owner[:, :, k - 1] if k > 0 else None
+            l2 = lab[:, :, k].copy()
+            new = _tile_layer(rest, l2, owner, k, below, use_p, len(pieces), 1, (k % 2 == 0) != prefer_x, pen_p)
+            for h, w, x, y, z, ht, c in new:
+                owner[x:x + h, y:y + w, z] = len(pieces)
+                pieces.append((h, w, x, y, z, 1, c))
+    return pieces, owner
+
+
+def keep_grounded_pieces(pieces, owner):
+    n = len(pieces)
+    parent = list(range(n + 1))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for bi, (h, w, x, y, z, ht, _) in enumerate(pieces):
+        if z == 0:
+            parent[find(bi)] = find(n)
+        else:
+            for o in set(owner[x:x + h, y:y + w, z - 1].ravel()) - {-1}:
+                parent[find(bi)] = find(int(o))
+    g = find(n)
+    return [b for bi, b in enumerate(pieces) if find(bi) == g]
+
+
 def keep_grounded(bricks, owner):
     """Drops bricks that are not (through other bricks) connected to the ground."""
     n = len(bricks)
@@ -240,8 +345,8 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
-def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5):
-    vox, vcol = to_voxels(occ, col, max_studs=max_studs)
+def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False):
+    vox, vcol = to_voxels(occ, col, max_studs=max_studs, layer=PLATE if plates else LAYER)
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])
     pal_lab = to_lab(pal_rgb)
@@ -256,6 +361,26 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5):
     lab[tuple(idx.T)] = cl_to_pal[cl]
     lab = smooth_labels(lab, vox, passes=2)
     vox, lab = support(vox, lab)
+    if plates:
+        best = None
+        for flip in (False, True):
+            v = vox[::-1] if flip else vox
+            l = lab[::-1] if flip else lab
+            pieces, owner = brickify_plates(v, l, sizes)
+            kept = keep_grounded_pieces(pieces, owner)
+            if flip:
+                X = vox.shape[0]
+                kept = [(h, w, X - x - h, y, z, ht, c) for h, w, x, y, z, ht, c in kept]
+            if best is None or len(kept) > len(best):
+                best = kept
+        best.sort(key=lambda b: (b[4], -b[5], b[2], b[3]))
+        out = []
+        for h, w, x, y, z, ht, l in best:
+            d = {"h": h, "w": w, "x": x, "y": y, "z": round(z / 3, 4), "c": palette[l]["id"]}
+            if ht == 1:
+                d["p"] = 1
+            out.append(d)
+        return out
     # tile a few ways and keep the one where the most bricks hold on to the ground
     best = None
     for flip in (False, True):

@@ -259,6 +259,162 @@ class FastEngine:
         return bricks, stats
 
 
+def parse_sizes(items):
+    """["2x4", "p1x2"] → [(2, 4), ("p", (1, 2))]; None = everything allowed."""
+    if not items:
+        return None
+    out = []
+    for x in items:
+        x = x.lower()
+        dims = tuple(sorted(map(int, x.lstrip("p").split("x"))))
+        out.append(("p", dims) if x.startswith("p") else dims)
+    return out
+
+
+TRELLIS2_COMMIT = "75fbf0183001ed9876c8dbb35de6b68552ee08bd"
+
+
+def warm_rembg():
+    import rembg
+    rembg.new_session()
+
+models_volume = modal.Volume.from_name("bouwboot-models", create_if_missing=True)
+
+# TRELLIS.2 (Microsoft, MIT): much better image → 3D. Needs a 24 GB GPU and a few compiled CUDA
+# extensions; we build them for Ampere/Ada (A10G = 8.6, L4 = 8.9). Attention runs on xformers.
+image_trellis = (
+    modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.10")
+    .apt_install("git", "libgl1", "libglib2.0-0", "libjpeg-dev", "build-essential", "ninja-build")
+    .pip_install("torch==2.6.0", "torchvision==0.21.0", index_url="https://download.pytorch.org/whl/cu124")
+    .pip_install(
+        "xformers==0.0.29.post2", "numpy<2", "imageio", "tqdm", "easydict", "opencv-python-headless", "ninja",
+        "trimesh", "transformers==4.57.1", "huggingface_hub", "safetensors", "kornia", "timm", "scipy",
+        "zstandard", "pillow", "fastapi[standard]", "rembg==2.0.56", "onnxruntime==1.17.3",
+        "git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8",
+    )
+    .env({"TORCH_CUDA_ARCH_LIST": "8.6;8.9", "FORCE_CUDA": "1", "MAX_JOBS": "8"})
+    .run_commands(
+        f"git clone --recursive https://github.com/microsoft/TRELLIS.2 /opt/TRELLIS.2 && cd /opt/TRELLIS.2 && git checkout {TRELLIS2_COMMIT} && git submodule update --init --recursive",
+    )
+    .run_commands(
+        "git clone --recursive https://github.com/JeffreyXiang/CuMesh.git /tmp/CuMesh && pip install /tmp/CuMesh --no-build-isolation",
+        gpu="L4",
+    )
+    .run_commands(
+        "git clone --recursive https://github.com/JeffreyXiang/FlexGEMM.git /tmp/FlexGEMM && pip install /tmp/FlexGEMM --no-build-isolation",
+        gpu="L4",
+    )
+    .run_commands(
+        "cp -r /opt/TRELLIS.2/o-voxel /tmp/o-voxel && pip install /tmp/o-voxel --no-build-isolation",
+        gpu="L4",
+    )
+    .run_function(warm_rembg)
+    .env({"PYTHONPATH": "/opt/TRELLIS.2:/root", "ATTN_BACKEND": "xformers", "SPARSE_ATTN_BACKEND": "xformers",
+          "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
+    .add_local_python_source("shape3d")
+)
+
+
+@app.cls(gpu="L4", image=image_trellis, scaledown_window=300, timeout=600, volumes={"/models": models_volume},
+         secrets=[modal.Secret.from_name("bouwboot-gpu"), modal.Secret.from_name("bouwboot-hf")])
+class Trellis:
+    @modal.enter()
+    def load(self):
+        import rembg
+        import torch
+        from trellis2.pipelines import rembg as t_rembg
+
+        class NoRembg:  # we remove the background ourselves (RMBG-2.0 is non-commercial and gated)
+            def __init__(self, *a, **k): pass
+            def to(self, *a): return self
+            def cpu(self): return self
+            def cuda(self): return self
+        t_rembg.BiRefNet = NoRembg
+        from trellis2.pipelines import Trellis2ImageTo3DPipeline
+        self.pipe = Trellis2ImageTo3DPipeline.from_pretrained("microsoft/TRELLIS.2-4B")
+        self.pipe.low_vram = False
+        self.pipe.cuda()
+        self.rembg = rembg.new_session()
+        models_volume.commit()
+
+    @modal.asgi_app()
+    def web(self):
+        import base64
+        import hmac
+        import io
+        import time
+        import numpy as np
+        import torch
+        from fastapi import FastAPI, Header, HTTPException
+        from PIL import Image
+        from pydantic import BaseModel
+        from shape3d import shape_to_bricks
+
+        api = FastAPI()
+        key = os.environ["BOUWBOOT_GPU_KEY"]
+
+        class Req(BaseModel):
+            image: str
+            palette: list[dict]
+            max_studs: int = 20
+            max_bricks: int = 600
+            sizes: list[str] | None = None
+            plates: bool = True
+            seed: int = 1
+
+        def check(auth):
+            if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
+                raise HTTPException(401, "unauthorized")
+
+        @api.get("/health")
+        def health(authorization: str | None = Header(None)):
+            check(authorization)
+            return {"ok": True}
+
+        def voxels(img):
+            """TRELLIS.2 → solid occupancy + colour on a 128 grid (z up)."""
+            from scipy import ndimage
+            mesh = self.pipe.run(img, seed=1, pipeline_type="512", preprocess_image=True)[0]
+            coords = mesh.coords.long().cpu().numpy()  # surface voxels at 512
+            res = int(round(1 / mesh.voxel_size))
+            col = mesh.attrs[:, mesh.layout["base_color"]].float().clamp(0, 1).cpu().numpy() * 255
+            R = 128
+            c = (coords * R // res).clip(0, R - 1)
+            occ = np.zeros((R, R, R), bool)
+            occ[c[:, 0], c[:, 1], c[:, 2]] = True
+            acc = np.zeros((R, R, R, 3), np.float32)
+            cnt = np.zeros((R, R, R), np.float32)
+            np.add.at(acc, (c[:, 0], c[:, 1], c[:, 2]), col)
+            np.add.at(cnt, (c[:, 0], c[:, 1], c[:, 2]), 1)
+            colg = acc / np.maximum(cnt, 1)[..., None]
+            occ = ndimage.binary_closing(occ, iterations=1)
+            occ = ndimage.binary_fill_holes(occ)
+            return occ, colg
+
+        @api.post("/shape")
+        def shape(req: Req, authorization: str | None = Header(None)):
+            import rembg
+            check(authorization)
+            t0 = time.time()
+            img = Image.open(io.BytesIO(base64.b64decode(req.image))).convert("RGB")
+            img = rembg.remove(img, session=self.rembg)  # RGBA with real alpha
+            with torch.no_grad():
+                occ, col = voxels(img)
+            t1 = time.time()
+            sizes = parse_sizes(req.sizes)
+            studs = max(6, min(req.max_studs, 28))
+            while True:
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates)
+                if len(bricks) <= req.max_bricks or studs <= 6:
+                    break
+                studs -= 2
+            stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs}
+            print("trellis", stats, flush=True)
+            return {"bricks": bricks, "stats": stats}
+
+        return api
+
+
 @app.cls(gpu="T4", image=image3d, scaledown_window=300, timeout=300,
          secrets=[modal.Secret.from_name("bouwboot-gpu")])
 class Shaper:
@@ -293,7 +449,8 @@ class Shaper:
             palette: list[dict]  # [{id, hex}]
             max_studs: int = 16
             max_bricks: int = 450  # the build is made smaller until it fits
-            sizes: list[str] | None = None  # e.g. ["2x4", "1x2"]; None = all
+            sizes: list[str] | None = None  # e.g. ["2x4", "p1x2"]; None = all
+            plates: bool = False
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -318,12 +475,10 @@ class Shaper:
                 codes = self.model([img], device="cuda")
             occ, col = sample_grid(self.model, codes[0])
             t1 = time.time()
-            sizes = None
-            if req.sizes:
-                sizes = [tuple(sorted(map(int, x.lower().split("x")))) for x in req.sizes]
+            sizes = parse_sizes(req.sizes)
             studs = max(6, min(req.max_studs, 28))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
