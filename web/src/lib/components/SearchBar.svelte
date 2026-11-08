@@ -1,5 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	const warm = () => fetch('/api/warm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {});
+	onMount(warm);
 	let { value = '', onlyMine = false, big = false, autofocus = false }: { value?: string; onlyMine?: boolean; big?: boolean; autofocus?: boolean } = $props();
 	let q = $state(value);
 	let mine = $state(onlyMine);
@@ -18,7 +21,7 @@
 	<div class="bar">
 		<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
 		<!-- svelte-ignore a11y_autofocus -->
-		<input bind:value={q} placeholder="Wat wil je bouwen? Bijv. een krokodil" enterkeyhint="go" aria-label="Wat wil je bouwen?" {autofocus} />
+		<input bind:value={q} placeholder="Wat wil je bouwen? Bijv. een krokodil" enterkeyhint="go" aria-label="Wat wil je bouwen?" {autofocus} onfocus={warm} />
 		<button class="primary" type="submit" disabled={!q.trim()}>Bouw</button>
 	</div>
 	<label class="mine">

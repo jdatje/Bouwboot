@@ -94,3 +94,12 @@ export async function shape(
 	if (!res.ok) throw new Error(`3D ${res.status}: ${(await res.text()).slice(0, 200)}`);
 	return (await res.json()).bricks;
 }
+
+let lastWarm = 0;
+/** Wakes the GPU containers (cold start takes a while) as soon as someone opens the site. */
+export function warmUp() {
+	if (process.env.MOCK_GPU || Date.now() - lastWarm < 120_000) return;
+	lastWarm = Date.now();
+	const h = { authorization: `Bearer ${gpuKey()}` };
+	fetch(URL3D() + '/health', { headers: h }).catch(() => {});
+}

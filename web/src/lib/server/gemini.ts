@@ -39,7 +39,7 @@ export async function gemini<T>(parts: Part[], schema: object, temperature = 0.7
 }
 
 /** Dutch prompt → English geometric caption in BrickGPT's training style + a Dutch title. */
-export async function toCaption(prompt: string, variation: number): Promise<{ caption: string; title: string }> {
+export async function toCaption(prompt: string, variation: number): Promise<{ caption: string; title: string; subject: string }> {
 	return gemini(
 		[
 			{
@@ -50,15 +50,18 @@ The model was trained on captions that describe an object's 3D SHAPE plainly, e.
 Rules: one or two English sentences; describe the main body, parts, proportions and pose;
 no colours, no materials, no story, no mention of LEGO. Simplify to shapes that fit a 20x20x20 block.
 ${variation > 0 ? `This is variation #${variation}: choose a noticeably different pose, proportion or style than the obvious one.` : ''}
-Also give a short Dutch title (1-4 words, capitalised) for the build.
+Also give a short Dutch title (1-4 words, capitalised) for the build, and "subject": a short, unambiguous
+English description of the thing itself for an illustrator (e.g. "a small motorboat", "a crocodile").
+IMPORTANT: the request is Dutch unless it is clearly another language. Dutch words that look English
+keep their Dutch meaning: "boot" = boat, "kat" = cat, "bank" = sofa/couch, "slang" = snake, "brand" = fire.
 
 Request: ${prompt}`
 			}
 		],
 		{
 			type: 'object',
-			properties: { caption: { type: 'string' }, title: { type: 'string' } },
-			required: ['caption', 'title']
+			properties: { caption: { type: 'string' }, title: { type: 'string' }, subject: { type: 'string' } },
+			required: ['caption', 'title', 'subject']
 		},
 		variation > 0 ? 1.0 : 0.4
 	);
@@ -175,7 +178,7 @@ unsure or not a plain brick) and its colour as one of: ${names}.`
 
 function mock(parts: Part[]): unknown {
 	const text = parts.map((p) => ('text' in p ? p.text : '')).join('');
-	if (text.includes('Request:')) return { caption: 'A simple test object.', title: 'Testbouwwerk' };
+	if (text.includes('Request:')) return { caption: 'A simple test object.', title: 'Testbouwwerk', subject: 'a test object' };
 	if (text.includes('Bricks (index')) {
 		const n = (text.match(/^\d+: /gm) ?? []).length;
 		const ids = [4, 14, 1, 15];
@@ -202,7 +205,10 @@ no stand or base, no other objects. Bright, solid colours.${variation > 0 ? ` Va
 		const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
 			method: 'POST',
 			headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-			body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text }] }], generationConfig: { responseModalities: ['IMAGE'] } })
+			body: JSON.stringify({
+				contents: [{ role: 'user', parts: [{ text }] }],
+				generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } }
+			})
 		});
 		if (!res.ok) { last = `${m} ${res.status}`; continue; }
 		const j = await res.json();
