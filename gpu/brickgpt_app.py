@@ -318,7 +318,9 @@ image_trellis = (
     )
     .run_commands("python -c 'import o_voxel, flex_gemm; print(\"extensions built\")' || true")
     .env({"PYTHONPATH": "/opt/TRELLIS.2:/root", "ATTN_BACKEND": "xformers", "SPARSE_ATTN_BACKEND": "xformers",
-          "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
+          "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
+          # keep compiled/tuned GPU kernels between containers (the first run tunes for ~50 s)
+          "TRITON_CACHE_DIR": "/models/triton", "TORCHINDUCTOR_CACHE_DIR": "/models/inductor"})
     .add_local_python_source("shape3d")
 )
 
@@ -367,7 +369,7 @@ class Trellis:
             sizes: list[str] | None = None
             plates: bool = True
             seed: int = 1
-            steps: int = 12
+            steps: int = 10
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -404,7 +406,9 @@ class Trellis:
             self.last_timing = {k: round(v, 1) for k, v in tm.items()}
             coords = tex.coords[:, 1:].long().cpu().numpy()  # surface voxels at 512
             res = 512
-            col = tex.feats[:, 0:3].float().clamp(0, 1).cpu().numpy() * 255
+            lin = tex.feats[:, 0:3].float().clamp(0, 1).cpu().numpy()
+            # TRELLIS gives linear colours; convert to sRGB like the drawing
+            col = np.where(lin <= 0.0031308, 12.92 * lin, 1.055 * np.power(lin, 1 / 2.4) - 0.055) * 255
             R = 128
             c = (coords * R // res).clip(0, R - 1)
             shell = np.zeros((R, R, R), bool)
@@ -449,13 +453,17 @@ class Trellis:
             sizes = parse_sizes(req.sizes)
             studs = max(6, min(req.max_studs, 28))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=12)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=4)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
                      "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0)}
             print("trellis", stats, flush=True)
+            try:
+                models_volume.commit()
+            except Exception:
+                pass
             return {"bricks": bricks, "stats": stats}
 
         return api
