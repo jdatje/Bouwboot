@@ -6,7 +6,7 @@
 	import Viewer from '#lib/components/Viewer.svelte';
 	import PartIcon from '#lib/components/PartIcon.svelte';
 	import { BrickScene, RAW } from '#lib/scene.ts';
-	import { PALETTE_BY_ID, PART_TO_SIZE, countParts, makeSteps, parseBrick, type Brick } from '#lib/bricks.ts';
+	import { PALETTE_BY_ID, partInfo, partLabel, countParts, makeSteps, parseBrick, type Brick } from '#lib/bricks.ts';
 
 	type Info = {
 		build: {
@@ -37,7 +37,7 @@
 	const mine = $derived(page.url.searchParams.get('mijn') === '1' || !!info?.build.only_mine);
 	const hex = (c?: number) => (c === undefined ? RAW : (info?.colors[c]?.hex ?? PALETTE_BY_ID.get(c)?.hex ?? '#999'));
 	const cname = (c: number) => info?.colors[c]?.name ?? PALETTE_BY_ID.get(c)?.name ?? `Kleur ${c}`;
-	const pname = (p: string) => (PART_TO_SIZE[p] ? `Steen ${PART_TO_SIZE[p]}` : p);
+	const pname = (p: string) => partLabel(p);
 
 	const steps = $derived(info ? makeSteps(info.build.bricks, kid ? 1 : 2, kid ? 3 : 5) : []);
 	const stepParts = $derived.by(() => {
@@ -114,7 +114,7 @@
 					if (ev.type === 'caption') { liveTitle = ev.title; phase = 'building'; }
 					else if (ev.type === 'sketch') { sketch = ev.image; }
 					else if (ev.type === 'brick') {
-						const b = parseBrick(ev.b);
+						const b: Brick | null = ev.o ?? parseBrick(ev.b);
 						if (b) { live.push(b); scene!.add(b); liveCount = live.length; }
 					} else if (ev.type === 'rollback') {
 						live.length = ev.keep; scene!.truncate(ev.keep); liveCount = live.length;
@@ -155,9 +155,10 @@
 	}
 
 	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? '3d');
-	function reshape(otherEngine = false) {
+	const ENGINES: [string, string][] = [['trellis', 'TRELLIS (nauwkeurig)'], ['3d', 'TripoSR (snel)'], ['brickgpt', 'BrickGPT']];
+	function reshape(other: string | false = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;
-		const m = otherEngine ? (engine === '3d' ? 'brickgpt' : '3d') : engine;
+		const m = other || engine;
 		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&t=${Date.now()}`);
 	}
 
@@ -262,7 +263,7 @@
 					<button class="nav" onclick={() => goStep(step - 1)} aria-label="Vorige">◀</button>
 					<div class="oparts">
 						<b>{step}/{steps.length}</b>
-						{#each stepParts as p}<span><PartIcon size={PART_TO_SIZE[p.part]} hex={hex(p.color)} px={kid ? 14 : 10} />{p.qty}×</span>{/each}
+						{#each stepParts as p}<span><PartIcon part={p.part} hex={hex(p.color)} px={kid ? 14 : 10} />{p.qty}×</span>{/each}
 					</div>
 					<button class="nav primary" onclick={() => goStep(step + 1)} disabled={step === steps.length} aria-label="Volgende">▶</button>
 				</div>
@@ -302,8 +303,11 @@
 				</div>
 			{/if}
 			<p class="small muted method">
-				Gebouwd {engine === '3d' ? 'via een schets en een 3D-model' : 'met BrickGPT (tekst → stenen)'} ·
-				<button class="link plain" onclick={() => reshape(true)} disabled={!!busy}>probeer de andere bouwmethode</button>
+				Bouwmethode:
+				{#each ENGINES as [id, label], i}
+					{#if i}·{/if}
+					{#if id === engine}<b>{label}</b>{:else}<button class="link plain" onclick={() => reshape(id)} disabled={!!busy}>{label}</button>{/if}
+				{/each}
 			</p>
 		{/if}
 	</section>
@@ -344,7 +348,7 @@
 					{#if step === 0}<p class="muted small">{kid ? 'Zoek deze stenen bij elkaar:' : 'Alle onderdelen:'}</p>{/if}
 					{#each stepParts as p}
 						<div class="part">
-							<PartIcon size={PART_TO_SIZE[p.part]} hex={hex(p.color)} px={kid ? 18 : 12} />
+							<PartIcon part={p.part} hex={hex(p.color)} px={kid ? 18 : 12} />
 							<span class="qty">{p.qty}×</span>
 							{#if !kid}<span class="pname">{pname(p.part)} <small class="muted">{cname(p.color)}</small></span>{/if}
 						</div>
@@ -365,7 +369,7 @@
 									<label>
 										<input type="checkbox" disabled={l.received} checked={l.received || received.has(i)}
 											onchange={(e) => { const s = new Set(received); e.currentTarget.checked ? s.add(i) : s.delete(i); received = s; }} />
-										<PartIcon size={PART_TO_SIZE[l.part]} hex={hex(l.color)} />
+										<PartIcon part={l.part} hex={hex(l.color)} />
 										<span>{l.qty}× {pname(l.part)} <small class="muted">{cname(l.color)}</small></span>
 									</label>
 								</li>
@@ -384,7 +388,7 @@
 						<p>Je mist nog <b>{info.coverage.total - info.coverage.have}</b> stenen:</p>
 						<ul class="order">
 							{#each info.coverage.missing as l}
-								<li><PartIcon size={PART_TO_SIZE[l.part]} hex={hex(l.color)} /> <span>{l.qty}× {pname(l.part)} <small class="muted">{cname(l.color)}</small></span></li>
+								<li><PartIcon part={l.part} hex={hex(l.color)} /> <span>{l.qty}× {pname(l.part)} <small class="muted">{cname(l.color)}</small></span></li>
 							{/each}
 						</ul>
 						<ol class="howto">

@@ -3,7 +3,7 @@ import type { RequestHandler } from './$types';
 import { db } from '#lib/server/db.ts';
 import { stockTable } from '#lib/server/inventory.ts';
 import { colors } from '#lib/server/rebrickable.ts';
-import { PALETTE_BY_ID, PART_TO_SIZE } from '#lib/bricks.ts';
+import { PALETTE_BY_ID, partInfo, partLabel } from '#lib/bricks.ts';
 
 export const GET: RequestHandler = async () => {
 	const all = await colors();
@@ -12,11 +12,12 @@ export const GET: RequestHandler = async () => {
 		.filter((l) => l.owned > 0)
 		.map((l) => {
 			const c = PALETTE_BY_ID.get(l.color) ?? all.get(l.color);
-			const size = PART_TO_SIZE[l.part];
+			const info = partInfo(l.part);
 			return {
 				...l,
-				size: size ?? null,
-				name: size ? `Steen ${size}` : meta.get(l.part)?.name ?? l.part,
+				size: info?.size ?? null,
+				plate: info?.plate ?? false,
+				name: info ? partLabel(l.part) : meta.get(l.part)?.name ?? l.part,
 				img: meta.get(l.part)?.img ?? null,
 				colorName: c?.name ?? `Kleur ${l.color}`,
 				hex: c?.hex ?? '#999999'

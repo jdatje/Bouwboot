@@ -1,6 +1,7 @@
 // Shared brick model, used by the browser and the server.
 
-export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number };
+/** z is in brick layers (a plate sits at thirds: 0, 0.3333, ...). p = 1 for a plate (a third as high). */
+export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number; p?: number };
 
 /** BrickGPT's brick library: size (short x long) → LDraw/Rebrickable/BrickLink part number. */
 export const LIBRARY: Record<string, string> = {
@@ -13,15 +14,43 @@ export const LIBRARY: Record<string, string> = {
 	'2x4': '3001',
 	'2x6': '2456'
 };
+/** Plates: a third of a brick high. */
+export const PLATES: Record<string, string> = {
+	'1x1': '3024',
+	'1x2': '3023',
+	'1x3': '3623',
+	'1x4': '3710',
+	'1x6': '3666',
+	'1x8': '3460',
+	'2x2': '3022',
+	'2x3': '3021',
+	'2x4': '3020',
+	'2x6': '3795',
+	'2x8': '3034'
+};
+/** Part number → size, for bricks only (what BrickGPT and the brick-only designs use). */
 export const PART_TO_SIZE: Record<string, string> = Object.fromEntries(
 	Object.entries(LIBRARY).map(([s, p]) => [p, s])
 );
+export const PLATE_TO_SIZE: Record<string, string> = Object.fromEntries(
+	Object.entries(PLATES).map(([s, p]) => [p, s])
+);
+/** Size and kind of any simple part we know (brick or plate). */
+export function partInfo(part: string): { size: string; plate: boolean } | null {
+	if (PART_TO_SIZE[part]) return { size: PART_TO_SIZE[part], plate: false };
+	if (PLATE_TO_SIZE[part]) return { size: PLATE_TO_SIZE[part], plate: true };
+	return null;
+}
+export function partLabel(part: string, fallback?: string): string {
+	const i = partInfo(part);
+	return i ? `${i.plate ? 'Plaat' : 'Steen'} ${i.size}` : fallback ?? part;
+}
 
 export function sizeOf(b: Brick): string {
 	return `${Math.min(b.h, b.w)}x${Math.max(b.h, b.w)}`;
 }
 export function partOf(b: Brick): string {
-	return LIBRARY[sizeOf(b)];
+	return b.p ? PLATES[sizeOf(b)] : LIBRARY[sizeOf(b)];
 }
 
 export function parseBrick(s: string): Brick | null {

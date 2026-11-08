@@ -68,7 +68,9 @@ export async function* generate(
 const URL3D = () =>
 	(process.env.GPU_URL_3D || URL().replace('-designer-web', '-shaper-web')).replace(/\/$/, '');
 
-export type ShapeBrick = { h: number; w: number; x: number; y: number; z: number; c: number };
+export type ShapeBrick = { h: number; w: number; x: number; y: number; z: number; c: number; p?: number };
+const URLTR = () =>
+	(process.env.GPU_URL_TRELLIS || URL().replace('-designer-web', '-trellis-web')).replace(/\/$/, '');
 
 /** Picture → 3D shape → coloured bricks (TripoSR on Modal). */
 export async function shape(
@@ -76,7 +78,9 @@ export async function shape(
 	palette: { id: number; hex: string }[],
 	sizes: string[] | null,
 	signal?: AbortSignal,
-	maxBricks = 450
+	maxBricks = 450,
+	engine: 'tripo' | 'trellis' = 'tripo',
+	plates = true
 ): Promise<ShapeBrick[]> {
 	if (process.env.MOCK_GPU) {
 		const out: ShapeBrick[] = [];
@@ -85,10 +89,10 @@ export async function shape(
 				for (let y = 0; y < 6; y += 2) out.push({ h: 4, w: 2, x: x + (z % 2) * 2 > 12 ? x : x + (z % 2) * 2, y, z, c: palette[(x + z) % palette.length].id });
 		return out;
 	}
-	const res = await fetch(URL3D() + '/shape', {
+	const res = await fetch((engine === 'trellis' ? URLTR() : URL3D()) + '/shape', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', authorization: `Bearer ${gpuKey()}` },
-		body: JSON.stringify({ image: imageB64, palette, sizes, max_bricks: Math.max(20, Math.floor(maxBricks)) }),
+		body: JSON.stringify({ image: imageB64, palette, sizes, plates, max_bricks: Math.max(20, Math.floor(maxBricks)) }),
 		signal
 	});
 	if (!res.ok) throw new Error(`3D ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -102,4 +106,5 @@ export function warmUp() {
 	lastWarm = Date.now();
 	const h = { authorization: `Bearer ${gpuKey()}` };
 	fetch(URL3D() + '/health', { headers: h }).catch(() => {});
+	fetch(URLTR() + '/health', { headers: h }).catch(() => {});
 }

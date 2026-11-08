@@ -7,7 +7,7 @@ import { availableLibrary, fitToStock } from '#lib/server/inventory.ts';
 import { PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, parseBrick, type Brick, type Color } from '#lib/bricks.ts';
 import { colors as allColors } from '#lib/server/rebrickable.ts';
 
-type Engine = '3d' | 'brickgpt';
+type Engine = '3d' | 'trellis' | 'brickgpt';
 const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || '3d';
 
 /**
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	const text = String(body.prompt ?? '').trim().slice(0, 300);
 	const onlyMine = !!body.onlyMine;
 	const variation = Number(body.variation ?? 0) || 0;
-	const engine: Engine = body.engine === 'brickgpt' || body.engine === '3d' ? body.engine : DEFAULT_ENGINE;
+	const engine: Engine = ['brickgpt', '3d', 'trellis'].includes(body.engine) ? body.engine : DEFAULT_ENGINE;
 	const enc = new TextEncoder();
 	const abort = new AbortController();
 	request.signal.addEventListener('abort', () => abort.abort());
@@ -52,7 +52,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				let sketch: string | null = null;
 				const seed = Math.floor(Math.random() * 1e9);
 
-				if (engine === '3d') {
+				if (engine === '3d' || engine === 'trellis') {
 					// translate first: the drawing model reads "boot" as an English shoe
 					const cap = await toCaption(text, 0);
 					caption = cap.caption;
@@ -65,18 +65,20 @@ export const POST: RequestHandler = async ({ request }) => {
 						const small = await sharp(Buffer.from(img.data, 'base64')).resize(320, 320, { fit: 'inside' }).jpeg({ quality: 80 }).toBuffer();
 						sketch = 'data:image/jpeg;base64,' + small.toString('base64');
 						send({ type: 'sketch', image: sketch });
-						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal, maxBricks);
+						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal, maxBricks,
+							engine === 'trellis' ? 'trellis' : 'tripo', true);
 					}
 					if (shaped.length < 3) throw new Error('Van deze tekening kon ik geen bouwwerk maken. Probeer het nog eens.');
 					// stream the bricks layer by layer so the build animation still plays
 					const delay = Math.max(4, Math.min(25, 3000 / shaped.length));
 					for (const b of shaped) {
-						send({ type: 'brick', b: `${b.h}x${b.w} (${b.x},${b.y},${b.z})` });
+						send({ type: 'brick', o: { h: b.h, w: b.w, x: b.x, y: b.y, z: b.z, ...(b.p ? { p: 1 } : {}) } });
 						await new Promise((r) => setTimeout(r, delay));
 					}
 					bricks = shaped.map((b) => ({ ...b }));
 					send({ type: 'final', bricks: bricks.map(({ c, ...r }) => r) });
 				} else {
+					if (allowed) allowed = allowed.filter((a) => !a.startsWith('p')); // BrickGPT only knows bricks
 					const cap = await toCaption(text, variation);
 					caption = cap.caption;
 					title = cap.title;

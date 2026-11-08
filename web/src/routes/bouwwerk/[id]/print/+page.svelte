@@ -4,7 +4,7 @@
 	import Viewer from '#lib/components/Viewer.svelte';
 	import PartIcon from '#lib/components/PartIcon.svelte';
 	import { BrickScene } from '#lib/scene.ts';
-	import { PALETTE_BY_ID, PART_TO_SIZE, countParts, makeSteps, type Brick } from '#lib/bricks.ts';
+	import { PALETTE_BY_ID, partInfo, partLabel, countParts, makeSteps, type Brick } from '#lib/bricks.ts';
 
 	let scene = $state<BrickScene | null>(null);
 	let title = $state('');
@@ -59,7 +59,7 @@
 		<p>{pages.length} stappen</p>
 		<div class="all">
 			{#each all as p}
-				<div class="p"><PartIcon size={PART_TO_SIZE[p.part]} hex={hex(p.color)} px={10} /><b>{p.qty}×</b>{#if !kid}<small>{PART_TO_SIZE[p.part] ?? p.part} {cname(p.color)}</small>{/if}</div>
+				<div class="p"><PartIcon part={p.part} hex={hex(p.color)} px={10} /><b>{p.qty}×</b>{#if !kid}<small>{partLabel(p.part)} {cname(p.color)}</small>{/if}</div>
 			{/each}
 		</div>
 	</section>
@@ -68,7 +68,7 @@
 			<section class="step">
 				<div class="head"><span class="n">{p.n}</span>
 					<div class="box">
-						{#each p.parts as x}<div class="p"><PartIcon size={PART_TO_SIZE[x.part]} hex={hex(x.color)} px={kid ? 16 : 10} /><b>{x.qty}×</b></div>{/each}
+						{#each p.parts as x}<div class="p"><PartIcon part={x.part} hex={hex(x.color)} px={kid ? 16 : 10} /><b>{x.qty}×</b></div>{/each}
 					</div>
 				</div>
 				<img src={p.img} alt="Stap {p.n}" />

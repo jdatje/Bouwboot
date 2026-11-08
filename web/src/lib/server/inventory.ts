@@ -1,5 +1,5 @@
 import { db, type BuildRow } from './db';
-import { countParts, LIBRARY, PART_TO_SIZE, type Brick, type PartCount } from '#lib/bricks.ts';
+import { countParts, LIBRARY, partInfo, partOf, type Brick, type PartCount } from '#lib/bricks.ts';
 
 const key = (part: string, color: number) => `${part}/${color}`;
 
@@ -58,12 +58,13 @@ export function coverage(bricks: Brick[], excludeBuild?: string): Coverage {
 	return { have, total, missing };
 }
 
-/** Available plain bricks per size and colour (for "alleen mijn stenen"). */
+/** Available simple parts per size and colour (for "alleen mijn stenen"): "2x4" = brick, "p2x4" = plate. */
 export function availableLibrary(): Map<string, Map<number, number>> {
 	const res = new Map<string, Map<number, number>>();
 	for (const l of stockTable().values()) {
-		const size = PART_TO_SIZE[l.part];
-		if (!size || l.available <= 0) continue;
+		const info = partInfo(l.part);
+		if (!info || l.available <= 0) continue;
+		const size = (info.plate ? 'p' : '') + info.size;
 		if (!res.has(size)) res.set(size, new Map());
 		res.get(size)!.set(l.color, l.available);
 	}
@@ -78,7 +79,7 @@ export function availableLibrary(): Map<string, Map<number, number>> {
 export function fitToStock(bricks: Brick[], prefer: (size: string, wanted: number, options: number[]) => number) {
 	const avail = availableLibrary();
 	for (const b of bricks) {
-		const size = `${Math.min(b.h, b.w)}x${Math.max(b.h, b.w)}`;
+		const size = `${b.p ? 'p' : ''}${Math.min(b.h, b.w)}x${Math.max(b.h, b.w)}`;
 		const colors = avail.get(size);
 		if (!colors) continue;
 		const left = colors.get(b.c!) ?? 0;

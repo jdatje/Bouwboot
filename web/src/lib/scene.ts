@@ -8,15 +8,18 @@ const H = 1.2; // brick height in stud units
 export const RAW = '#cfd3d6'; // colour of bricks before they are painted
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
-function brickGeometry(h: number, w: number): THREE.BufferGeometry {
-	const k = `${h}x${w}`;
+const heightOf = (b: Brick) => (b.p ? H / 3 : H);
+
+function brickGeometry(h: number, w: number, plate = false): THREE.BufferGeometry {
+	const k = `${h}x${w}${plate ? 'p' : ''}`;
 	let g = geoCache.get(k);
 	if (g) return g;
-	const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(h - 0.04, H - 0.02, w - 0.04)];
+	const ht = plate ? H / 3 : H;
+	const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(h - 0.04, ht - 0.02, w - 0.04)];
 	for (let i = 0; i < h; i++)
 		for (let j = 0; j < w; j++) {
 			const s = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 14);
-			s.translate(i - h / 2 + 0.5, H / 2 + 0.1, j - w / 2 + 0.5);
+			s.translate(i - h / 2 + 0.5, ht / 2 + 0.1, j - w / 2 + 0.5);
 			parts.push(s);
 		}
 	g = mergeGeometries(parts.map((p) => p.toNonIndexed()))!;
@@ -131,12 +134,12 @@ export class BrickScene {
 
 	place(it: Item, lift = 0) {
 		const b = it.brick;
-		it.mesh.position.set(b.x + b.h / 2 + this.offset.x, b.z * H + H / 2 + lift, b.y + b.w / 2 + this.offset.z);
+		it.mesh.position.set(b.x + b.h / 2 + this.offset.x, b.z * H + heightOf(b) / 2 + lift, b.y + b.w / 2 + this.offset.z);
 	}
 
 	add(brick: Brick, color: string = RAW, animate = true) {
 		const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.35, metalness: 0.0 });
-		const mesh = new THREE.Mesh(brickGeometry(brick.h, brick.w), mat);
+		const mesh = new THREE.Mesh(brickGeometry(brick.h, brick.w, !!brick.p), mat);
 		const it: Item = { mesh, mat, brick, t0: animate ? performance.now() : -1 };
 		this.place(it, animate ? 7 : 0);
 		this.group.add(mesh);
@@ -190,7 +193,7 @@ export class BrickScene {
 				it.t0 = now + 110 * order.indexOf(i);
 				if (!it.halo) {
 					it.halo = new THREE.Mesh(it.mesh.geometry, haloMat);
-					it.halo.scale.set(1 + 0.16 / it.brick.h, 1.12, 1 + 0.16 / it.brick.w);
+					it.halo.scale.set(1 + 0.16 / it.brick.h, it.brick.p ? 1.4 : 1.12, 1 + 0.16 / it.brick.w);
 					it.mesh.add(it.halo);
 				}
 			} else if (it.halo) {
@@ -250,7 +253,7 @@ export class BrickScene {
 		for (const it of vis) {
 			const b = it.brick;
 			box.expandByPoint(new THREE.Vector3(b.x + this.offset.x, b.z * H, b.y + this.offset.z));
-			box.expandByPoint(new THREE.Vector3(b.x + b.h + this.offset.x, (b.z + 1) * H, b.y + b.w + this.offset.z));
+			box.expandByPoint(new THREE.Vector3(b.x + b.h + this.offset.x, b.z * H + heightOf(b), b.y + b.w + this.offset.z));
 		}
 		const c = box.getCenter(new THREE.Vector3());
 		const r = Math.max(4, box.getSize(new THREE.Vector3()).length() / 2);

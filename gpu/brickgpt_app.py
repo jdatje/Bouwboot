@@ -283,7 +283,7 @@ models_volume = modal.Volume.from_name("bouwboot-models", create_if_missing=True
 # TRELLIS.2 (Microsoft, MIT): much better image → 3D. Needs a 24 GB GPU and a few compiled CUDA
 # extensions; we build them for Ampere/Ada (A10G = 8.6, L4 = 8.9). Attention runs on xformers.
 image_trellis = (
-    modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.10")
+    modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.11")
     .apt_install("git", "libgl1", "libglib2.0-0", "libjpeg-dev", "build-essential", "ninja-build")
     .pip_install("torch==2.6.0", "torchvision==0.21.0", index_url="https://download.pytorch.org/whl/cu124")
     .pip_install(
