@@ -308,6 +308,11 @@ image_trellis = (
         "cp -r /opt/TRELLIS.2/o-voxel /tmp/o-voxel && pip install /tmp/o-voxel --no-build-isolation",
         gpu="L4",
     )
+    .run_commands(
+        "git clone -b v0.4.0 https://github.com/NVlabs/nvdiffrast.git /tmp/nvdiffrast && pip install /tmp/nvdiffrast --no-build-isolation",
+        gpu="L4",
+    )
+    .run_commands("python -c 'import cumesh, flex_gemm, o_voxel, nvdiffrast, xformers; print(\"extensions ok\")'", gpu="L4")
     .run_function(warm_rembg)
     .env({"PYTHONPATH": "/opt/TRELLIS.2:/root", "ATTN_BACKEND": "xformers", "SPARSE_ATTN_BACKEND": "xformers",
           "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
