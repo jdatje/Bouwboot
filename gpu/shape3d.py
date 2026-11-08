@@ -351,7 +351,7 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
-def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False):
+def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False, brighten=7):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs, layer=PLATE if plates else LAYER)
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])
@@ -362,7 +362,7 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, p
     # each main colour → closest Lego colour (in Lab, so it looks right to the eye)
     ml = to_lab(means)
     # the 3D model renders colours a bit dull and dark; nudge them back towards the drawing
-    ml = ml * np.array([1.0, 1.15, 1.15]) + np.array([7.0, 0, 0])
+    ml = ml * np.array([1.0, 1.15, 1.15]) + np.array([float(brighten), 0, 0])
     cl_to_pal = ((ml[:, None, :] - pal_lab[None]) ** 2).sum(-1).argmin(1)
     lab[tuple(idx.T)] = cl_to_pal[cl]
     lab = smooth_labels(lab, vox, passes=2)

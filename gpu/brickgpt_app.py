@@ -381,13 +381,30 @@ class Trellis:
         def voxels(img, steps):
             """TRELLIS.2 → solid occupancy + colour on a 128 grid (z up). Colour is NaN where unknown."""
             from scipy import ndimage
+            # the pipeline's own run(), minus building and cleaning a full-resolution mesh (we only
+            # need the coloured surface voxels)
+            p = self.pipe
             params = {"steps": steps}
-            mesh = self.pipe.run(img, seed=1, pipeline_type="512", preprocess_image=True,
-                                 sparse_structure_sampler_params=params, shape_slat_sampler_params=params,
-                                 tex_slat_sampler_params=params)[0]
-            coords = mesh.coords.long().cpu().numpy()  # surface voxels at 512
-            res = int(round(1 / mesh.voxel_size))
-            col = mesh.attrs[:, mesh.layout["base_color"]].float().clamp(0, 1).cpu().numpy() * 255
+            tm = {}
+            t = time.time()
+            image = p.preprocess_image(img)
+            torch.manual_seed(1)
+            cond = p.get_cond([image], 512)
+            tm["cond"] = time.time() - t; t = time.time()
+            coords = p.sample_sparse_structure(cond, 32, 1, params)
+            tm["structure"] = time.time() - t; t = time.time()
+            shape_slat = p.sample_shape_slat(cond, p.models["shape_slat_flow_model_512"], coords, params)
+            tm["shape"] = time.time() - t; t = time.time()
+            tex_slat = p.sample_tex_slat(cond, p.models["tex_slat_flow_model_512"], shape_slat, params)
+            tm["texture"] = time.time() - t; t = time.time()
+            _, subs = p.decode_shape_slat(shape_slat, 512)
+            tex = p.decode_tex_slat(tex_slat, subs)[0]
+            tm["decode"] = time.time() - t
+            print("trellis timing", {k: round(v, 1) for k, v in tm.items()}, flush=True)
+            self.last_timing = {k: round(v, 1) for k, v in tm.items()}
+            coords = tex.coords[:, 1:].long().cpu().numpy()  # surface voxels at 512
+            res = 512
+            col = tex.feats[:, 0:3].float().clamp(0, 1).cpu().numpy() * 255
             R = 128
             c = (coords * R // res).clip(0, R - 1)
             shell = np.zeros((R, R, R), bool)
@@ -432,11 +449,12 @@ class Trellis:
             sizes = parse_sizes(req.sizes)
             studs = max(6, min(req.max_studs, 28))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=12)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
-            stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs}
+            stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0)}
             print("trellis", stats, flush=True)
             return {"bricks": bricks, "stats": stats}
 
