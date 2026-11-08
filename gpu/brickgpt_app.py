@@ -320,7 +320,9 @@ image_trellis = (
     .env({"PYTHONPATH": "/opt/TRELLIS.2:/root", "ATTN_BACKEND": "xformers", "SPARSE_ATTN_BACKEND": "xformers",
           "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True",
           # keep compiled/tuned GPU kernels between containers (the first run tunes for ~50 s)
-          "TRITON_CACHE_DIR": "/models/triton", "TORCHINDUCTOR_CACHE_DIR": "/models/inductor"})
+          "TRITON_CACHE_DIR": "/models/triton", "TORCHINDUCTOR_CACHE_DIR": "/models/inductor",
+          # FlexGEMM tunes its kernels per size class; keep those results so later designs skip it
+          "FLEX_GEMM_AUTOTUNE_CACHE_PATH": "/models/flexgemm/autotune_cache.json"})
     .add_local_python_source("shape3d")
 )
 
@@ -330,6 +332,11 @@ image_trellis = (
 class Trellis:
     @modal.enter()
     def load(self):
+        os.makedirs("/models/flexgemm", exist_ok=True)
+        try:
+            models_volume.reload()  # pick up kernel tuning saved by other containers
+        except Exception:
+            pass
         import torch
         from trellis2.pipelines import rembg as t_rembg
 
@@ -369,7 +376,7 @@ class Trellis:
             sizes: list[str] | None = None
             plates: bool = True
             seed: int = 1
-            steps: int = 10
+            steps: int = 12
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -425,6 +432,13 @@ class Trellis:
                                                lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))
             outside = np.isin(lab, border[border > 0])
             solid = ndimage.binary_erosion(~outside, iterations=2) | shell
+            # also fill every vertical column between its lowest and highest surface voxel: robust
+            # against small holes in the surface (a house with a gap in the roof stays a house)
+            zs = np.arange(R)[None, None, :]
+            has = shell.any(2)
+            lo = np.where(has, shell.argmax(2), R)[..., None]
+            hi = np.where(has, R - 1 - shell[:, :, ::-1].argmax(2), -1)[..., None]
+            solid |= (zs >= lo) & (zs <= hi)
             return solid, colg
 
         def cut_out(img):
