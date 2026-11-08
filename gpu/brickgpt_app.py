@@ -297,7 +297,7 @@ image_trellis = (
     .pip_install(
         "xformers==0.0.29.post2", "numpy<2", "imageio", "tqdm", "easydict", "opencv-python-headless", "ninja",
         "trimesh", "transformers==4.57.1", "huggingface_hub", "safetensors", "kornia", "timm", "scipy",
-        "zstandard", "pillow", "fastapi[standard]", "rembg==2.0.56", "onnxruntime==1.17.3",
+        "zstandard", "pillow", "fastapi[standard]",
         "git+https://github.com/EasternJournalist/utils3d.git@9a4eb15e4021b67b12c460c7057d642626897ec8",
     )
     .env({"TORCH_CUDA_ARCH_LIST": "8.6;8.9", "FORCE_CUDA": "1", "MAX_JOBS": "8"})
@@ -317,7 +317,6 @@ image_trellis = (
         "git clone -b v0.4.0 https://github.com/NVlabs/nvdiffrast.git /tmp/nvdiffrast && pip install /tmp/nvdiffrast --no-build-isolation",
     )
     .run_commands("python -c 'import o_voxel, flex_gemm; print(\"extensions built\")' || true")
-    .run_function(warm_rembg)
     .env({"PYTHONPATH": "/opt/TRELLIS.2:/root", "ATTN_BACKEND": "xformers", "SPARSE_ATTN_BACKEND": "xformers",
           "HF_HOME": "/models/hf", "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:True"})
     .add_local_python_source("shape3d")
@@ -329,7 +328,6 @@ image_trellis = (
 class Trellis:
     @modal.enter()
     def load(self):
-        import rembg
         import torch
         from trellis2.pipelines import rembg as t_rembg
 
@@ -343,7 +341,6 @@ class Trellis:
         self.pipe = Trellis2ImageTo3DPipeline.from_pretrained("microsoft/TRELLIS.2-4B")
         self.pipe.low_vram = False
         self.pipe.cuda()
-        self.rembg = rembg.new_session()
         models_volume.commit()
 
     @modal.asgi_app()
@@ -400,13 +397,26 @@ class Trellis:
             occ = ndimage.binary_fill_holes(occ)
             return occ, colg
 
+        def cut_out(img):
+            """The drawings have a plain white background: everything near-white that touches
+            the edge is background (white parts inside the object stay)."""
+            from scipy import ndimage
+            a = np.asarray(img).astype(np.int16)
+            whiteish = (a.min(-1) > 190) & ((a.max(-1) - a.min(-1)) < 16)  # white and soft grey shadows
+            lab, _ = ndimage.label(whiteish)
+            edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+            bg = np.isin(lab, list(edge))
+            fg = ndimage.binary_opening(~bg, iterations=2)
+            fg = ndimage.binary_fill_holes(fg)
+            alpha = (fg * 255).astype(np.uint8)
+            return Image.fromarray(np.dstack([a.astype(np.uint8), alpha]), "RGBA")
+
         @api.post("/shape")
         def shape(req: Req, authorization: str | None = Header(None)):
-            import rembg
             check(authorization)
             t0 = time.time()
             img = Image.open(io.BytesIO(base64.b64decode(req.image))).convert("RGB")
-            img = rembg.remove(img, session=self.rembg)  # RGBA with real alpha
+            img = cut_out(img)
             with torch.no_grad():
                 occ, col = voxels(img)
             t1 = time.time()
