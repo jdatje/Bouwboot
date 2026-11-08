@@ -47,6 +47,18 @@ jobs:
           echo "URL=$URL" >> $GITHUB_ENV
           echo "URL3D=$URL3D" >> $GITHUB_ENV
           echo "GPU URLs: $URL $URL3D"
+      - name: Stop containers still running the previous version
+        run: |
+          modal container list --json > containers.json || echo "[]" > containers.json
+          python - <<'PY'
+          import json, subprocess
+          for c in json.load(open("containers.json")):
+              cid = c.get("Container ID") or c.get("container_id") or c.get("id")
+              app = str(c.get("App Name") or c.get("app_name") or "")
+              if cid and "bouwboot" in app:
+                  subprocess.run(["modal", "container", "stop", cid])
+                  print("stopped", cid)
+          PY
       - name: Smoke test 3D route
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}

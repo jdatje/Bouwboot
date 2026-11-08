@@ -472,7 +472,7 @@ class Trellis:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "srgb-1"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "fill-2"}
             print("trellis", stats, flush=True)
             try:
                 models_volume.commit()
