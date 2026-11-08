@@ -33,7 +33,7 @@ Typ iets ("krokodil"), zie het in Lego-stenen verschijnen, bouw het na met stap-
    tailscale up --hostname bouwboot
    tailscale funnel --bg 3000
    ```
-   De site staat dan op `https://bouwboot.<jouw-tailnet>.ts.net`. Zet precies dat adres als `ORIGIN` in `/etc/bouwboot.env` en draai `update.sh` nog een keer.
+   De site staat dan op `https://bouwboot.<jouw-tailnet>.ts.net`.
    - Een LXC-container heeft voor Tailscale toegang tot `/dev/net/tun` nodig. Zie de Tailscale-handleiding voor Proxmox LXC.
 
 ### /etc/bouwboot.env
@@ -44,7 +44,6 @@ Typ iets ("krokodil"), zie het in Lego-stenen verschijnen, bouw het na met stap-
 | `GEMINI_API_KEY` | zelfde sleutel als in GitHub |
 | `MODAL_TOKEN_SECRET` | het `as-…`-deel van je Modal-token; hieruit wordt de sleutel voor de GPU-dienst afgeleid |
 | `REBRICKABLE_API_KEY` | Rebrickable-sleutel |
-| `ORIGIN` | het adres van de site, bijv. `https://bouwboot.taila44a3a.ts.net` |
 
 Als je het Modal-token vervangt:
 1. Pas het aan in GitHub (Secrets).

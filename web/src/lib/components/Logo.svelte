@@ -4,7 +4,7 @@
 	const cols = ['#d01012', '#ffcf00', '#0a5bd3', '#237841', '#fe8a18', '#d01012', '#0a5bd3', '#ffcf00'];
 </script>
 
-<a href="/" class="logo" style:font-size="{size * 2}rem" aria-label="Bouwboot">
+<a href="/" class="logo" style:font-size="min({size * 2}rem, 9.5vw)" aria-label="Bouwboot">
 	{#each letters as l, i}<span style:background={cols[i]} style:color={cols[i] === '#ffcf00' ? '#1d2330' : 'white'}>{l}</span>{/each}
 </a>
 

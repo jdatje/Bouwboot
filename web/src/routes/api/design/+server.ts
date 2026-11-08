@@ -40,7 +40,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (onlyMine) {
 					const lib = availableLibrary();
 					allowed = [...lib.keys()];
-					if (!allowed.length) throw new Error('Je magazijn heeft nog geen losse stenen (2x4, 1x2, ...). Voeg eerst sets of een scan toe.');
+					if (!allowed.length) throw new Error('Er zijn nu geen losse stenen beschikbaar (2x4, 1x2, ...). Voeg sets of een scan toe, of haal een bouwwerk uit elkaar.');
 					const owned = new Set([...lib.values()].flatMap((m) => [...m.keys()]));
 					palette = [...owned].map(col).filter(Boolean) as Color[];
 					maxBricks = [...lib.values()].reduce((a, m) => a + [...m.values()].reduce((x, y) => x + y, 0), 0);

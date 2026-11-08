@@ -29,7 +29,7 @@ jobs:
           REBRICKABLE_API_KEY: ${{ secrets.REBRICKABLE_API_KEY }}
         run: |
           cd web
-          DATA_DIR=/tmp/bb PORT=3000 ORIGIN=http://localhost:3000 BODY_SIZE_LIMIT=30M nohup node build > /tmp/server.log 2>&1 &
+          DATA_DIR=/tmp/bb PORT=3000 BODY_SIZE_LIMIT=30M nohup node build > /tmp/server.log 2>&1 &
           sleep 3 && curl -sf localhost:3000/ >/dev/null
       - name: Run
         env:

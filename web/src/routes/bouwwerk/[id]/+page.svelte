@@ -197,13 +197,13 @@
 
 	async function remove() {
 		if (!info || !confirm(`"${info.build.title}" verwijderen?`)) return;
-		await fetch(`/api/builds/${info.build.id}`, { method: 'DELETE' });
+		await fetch(`/api/builds/${info.build.id}`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: '{}' });
 		goto('/bouwwerken');
 	}
 
 	async function order(cancel = false) {
 		busy = 'bestellen';
-		const r = await fetch(`/api/builds/${info!.build.id}/order`, { method: cancel ? 'DELETE' : 'POST' });
+		const r = await fetch(`/api/builds/${info!.build.id}/order`, { method: cancel ? 'DELETE' : 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
 		if (r.ok) info = await r.json();
 		busy = '';
 	}
@@ -418,7 +418,7 @@
 	.oparts span { display: inline-flex; align-items: center; gap: 0.25rem; }
 	.sketch { position: absolute; left: 0.8rem; top: 0.8rem; width: 110px; height: 110px; object-fit: contain; background: white; border-radius: 14px; box-shadow: 0 2px 10px rgba(0,0,0,.12); }
 	.method { margin-top: 1rem; }
-	button.plain { color: #0a5bd3; font-weight: 500; }
+	button.link.plain { color: #0a5bd3; font-weight: 500; }
 	.replay { position: absolute; right: 0.8rem; bottom: 0.8rem; background: rgba(255,255,255,.9); }
 	.headline h1 { margin: 0.9rem 0 0.1rem; font-size: 1.7rem; }
 	.small { font-size: 0.88rem; }

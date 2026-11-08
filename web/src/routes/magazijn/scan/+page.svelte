@@ -28,9 +28,13 @@
 		if (!f) return;
 		preview = URL.createObjectURL(f);
 		phase = 'busy'; err = '';
-		const fd = new FormData();
-		fd.append('photo', await shrink(f), 'foto.jpg');
-		const r = await fetch('/api/scan', { method: 'POST', body: fd });
+		const blob = await shrink(f);
+		const b64 = await new Promise<string>((res) => {
+			const rd = new FileReader();
+			rd.onload = () => res(String(rd.result).split(',')[1] ?? '');
+			rd.readAsDataURL(blob);
+		});
+		const r = await fetch('/api/scan', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ photo: b64 }) });
 		if (!r.ok) {
 			err = (await r.json().catch(() => ({}))).message ?? 'Scannen mislukt.';
 			phase = 'start';

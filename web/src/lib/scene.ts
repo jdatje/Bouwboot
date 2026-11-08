@@ -234,8 +234,10 @@ export class BrickScene {
 		this.renderer.setSize(w, h, false);
 		this.camera.aspect = w / h;
 		this.camera.updateProjectionMatrix();
+		this.renderer.setClearColor(0xffffff, 1); // JPEG has no transparency
 		this.renderer.render(this.scene, this.camera);
 		const url = this.renderer.domElement.toDataURL('image/jpeg', 0.85);
+		this.renderer.setClearColor(0x000000, 0);
 		this.resize();
 		return url;
 	}

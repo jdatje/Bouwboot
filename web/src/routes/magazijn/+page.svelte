@@ -50,7 +50,7 @@
 	}
 	async function removeSet(s: SetRow) {
 		if (!confirm(`${s.name} en al zijn onderdelen uit het magazijn halen?`)) return;
-		await fetch(`/api/stock/sets/${s.set_num}`, { method: 'DELETE' });
+		await fetch(`/api/stock/sets/${s.set_num}`, { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: '{}' });
 		refresh();
 	}
 	async function lost(l: Line, delta: number) {
@@ -175,5 +175,5 @@
 	.count { min-width: 3.5em; text-align: right; }
 	.btns { display: flex; gap: 0.3rem; }
 	.btns button { padding: 0.35em 0.6em; font-size: 0.82rem; }
-	@media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+	@media (max-width: 900px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 </style>
