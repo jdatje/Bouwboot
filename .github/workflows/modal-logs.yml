@@ -1,0 +1,11 @@
+name: modal-logs
+on: workflow_dispatch
+jobs:
+  logs:
+    runs-on: ubuntu-latest
+    env:
+      MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+      MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+    steps:
+      - run: pip install -q modal
+      - run: timeout 60 modal app logs bouwboot-gpu > logs.txt 2>&1 || true; grep -v "^\s*$" logs.txt | grep -viE "token|secret" | tail -150
