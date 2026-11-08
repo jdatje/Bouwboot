@@ -46,18 +46,34 @@ def draw(subject):
 print(requests.get(url + "/health", headers=H, timeout=600).text)
 subjects = json.loads(os.environ.get("SUBJECTS") or "[]")
 # without SUBJECTS the saved drawings in gpu/fixtures are used (no Gemini cost)
-fixtures = {} if subjects else {n: f"gpu/fixtures/{n}.png" for n in ["boat", "crocodile", "dog", "house"]}
+FIX = json.loads(os.environ.get("FIXTURES") or "[]") or ["boat", "crocodile", "dog", "house"]
+fixtures = {} if subjects else {n: f"gpu/fixtures/{n}.png" for n in FIX}
 subjects = subjects or list(fixtures)
 for i, s in enumerate(subjects):
     img = base64.b64encode(open(fixtures[s], "rb").read()).decode() if s in fixtures else draw(s)
     open(f"out/{PRE}s{i}.png", "wb").write(base64.b64decode(img))
     t = time.time()
     r = requests.post(url + "/shape", headers=H, json={"image": img, "palette": palette, "plates": PLATES, "max_studs": STUDS,
-                                                       "max_voxels": SIZE[0], "hollow": SIZE[1], "max_bricks": 4000}, timeout=900)
+                                                       "max_voxels": SIZE[0], "hollow": SIZE[1], "max_bricks": 4000,
+                                                       "debug": os.environ.get("DEBUG") == "1"}, timeout=900)
     if not r.ok:
         print(s, "FAILED", r.status_code, r.text[:500]); continue
     j = r.json(); bricks = j["bricks"]
+    dbg = j["stats"].pop("debug", None)
     print(f"[{s}] {len(bricks)} bricks, {time.time()-t:.1f}s, stats {j['stats']}", flush=True)
+    if dbg:
+        open(f"out/{PRE}cut{i}.png", "wb").write(base64.b64decode(dbg["cut"]))
+        o = np.unpackbits(np.frombuffer(base64.b64decode(dbg["occ"]), np.uint8))[:64**3].reshape(64, 64, 64).astype(bool)
+        cc = np.frombuffer(base64.b64decode(dbg["col"]), np.uint8).reshape(64, 64, 64, 3) / 255
+        # only draw the outer shell (faster), coloured
+        from scipy import ndimage
+        sh = o & ~ndimage.binary_erosion(o)
+        fc = np.zeros(o.shape + (4,)); fc[..., :3] = cc; fc[..., 3] = 1
+        fig = plt.figure(figsize=(10, 5))
+        for k, (el, az) in enumerate([(20, -60), (20, 120)]):
+            ax = fig.add_subplot(1, 2, k + 1, projection="3d"); ax.voxels(sh, facecolors=fc, edgecolor=None)
+            ax.view_init(el, az); ax.set_box_aspect(o.shape); ax.set_axis_off()
+        fig.suptitle(f"{s}: raw TRELLIS (64^3)"); fig.savefig(f"out/{PRE}raw{i}.png", dpi=90); plt.close(fig)
     # draw in plate units (3 per brick)
     def zr(b):
         z0 = int(round(b["z"] * 3)); return z0, z0 + (1 if b.get("p") else 3)

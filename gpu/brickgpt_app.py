@@ -381,6 +381,7 @@ class Trellis:
             slopes: bool = True
             seed: int = 1
             steps: int = 12
+            debug: bool = False
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -500,6 +501,17 @@ class Trellis:
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
                      "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "screen-1"}
+            if req.debug:
+                # raw TRELLIS result (before bricks) at 64^3 plus the cut-out, to see where detail is lost
+                from scipy import ndimage as _nd
+                o64 = _nd.zoom(occ.astype(np.float32), 0.5, order=1) > 0.3
+                c64 = np.nan_to_num(col.reshape(64, 2, 64, 2, 64, 2, 3).transpose(0, 2, 4, 1, 3, 5, 6).reshape(64, 64, 64, 8, 3), nan=-1)
+                good = (c64 >= 0).all(-1)
+                c64 = np.where(good.any(-1)[..., None], (np.where(good[..., None], c64, 0).sum(3) / np.maximum(good.sum(-1), 1)[..., None]), 0)
+                buf = io.BytesIO(); img.save(buf, "PNG")
+                stats["debug"] = {"occ": base64.b64encode(np.packbits(o64).tobytes()).decode(),
+                                  "col": base64.b64encode(c64.clip(0, 255).astype(np.uint8).tobytes()).decode(),
+                                  "cut": base64.b64encode(buf.getvalue()).decode()}
             print("trellis", stats, flush=True)
             try:
                 models_volume.commit()

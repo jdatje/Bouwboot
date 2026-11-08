@@ -17,6 +17,14 @@ on:
         description: "build size in studs (16 Klein, 24 Middel, 32 Groot)"
         required: false
         default: "16"
+      fixtures:
+        description: "JSON list of fixture names in gpu/fixtures (when no subjects)"
+        required: false
+        default: ""
+      debug:
+        description: "1 = also render the raw TRELLIS result"
+        required: false
+        default: ""
       skip_brickgpt:
         description: "skip the BrickGPT smoke test"
         required: false
@@ -31,7 +39,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
-      - run: pip install -q modal requests matplotlib numpy pillow
+      - run: pip install -q modal requests matplotlib numpy pillow scipy
       - name: Create GPU key secret on Modal
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
@@ -76,6 +84,8 @@ jobs:
           OUT_PREFIX: tr
           PLATES: "1"
           STUDS: ${{ github.event.inputs.studs || '16' }}
+          FIXTURES: ${{ github.event.inputs.fixtures }}
+          DEBUG: ${{ github.event.inputs.debug }}
         run: python gpu/smoke_shape.py "$URLTR"
       - name: Smoke test BrickGPT
         if: ${{ github.event.inputs.skip_brickgpt == '' }}
