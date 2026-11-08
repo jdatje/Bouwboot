@@ -284,7 +284,7 @@ models_volume = modal.Volume.from_name("bouwboot-models", create_if_missing=True
 # extensions; we build them for Ampere/Ada (A10G = 8.6, L4 = 8.9). Attention runs on xformers.
 image_trellis = (
     modal.Image.from_registry("nvidia/cuda:12.4.1-devel-ubuntu22.04", add_python="3.11")
-    .apt_install("git", "libgl1", "libglib2.0-0", "libjpeg-dev", "build-essential", "ninja-build")
+    .apt_install("git", "libgl1", "libglib2.0-0", "libjpeg-dev", "build-essential", "ninja-build", "clang")
     .pip_install("torch==2.6.0", "torchvision==0.21.0", index_url="https://download.pytorch.org/whl/cu124")
     .pip_install(
         "xformers==0.0.29.post2", "numpy<2", "imageio", "tqdm", "easydict", "opencv-python-headless", "ninja",
