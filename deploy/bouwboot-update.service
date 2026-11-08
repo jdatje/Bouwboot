@@ -1,0 +1,7 @@
+[Unit]
+Description=Bouwboot bijwerken vanaf GitHub
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /opt/bouwboot/deploy/autoupdate.sh

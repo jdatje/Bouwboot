@@ -52,7 +52,7 @@ Als je het Modal-token vervangt:
 
 ### Bijwerken
 
-`bash /opt/bouwboot/deploy/update.sh`
+Gaat vanzelf: elke 10 minuten kijkt de container of er op GitHub een nieuwe versie staat en werkt zichzelf dan bij (`bouwboot-update.timer`). Handmatig kan ook: `bash /opt/bouwboot/deploy/update.sh`. Logboek: `journalctl -u bouwboot-update`.
 
 ## Voor ontwikkelaars
 

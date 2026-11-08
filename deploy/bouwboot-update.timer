@@ -1,0 +1,9 @@
+[Unit]
+Description=Elke 10 minuten kijken of er een nieuwe Bouwboot-versie is
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target

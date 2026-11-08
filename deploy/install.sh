@@ -26,3 +26,4 @@ cp /opt/bouwboot/deploy/bouwboot.service /etc/systemd/system/bouwboot.service
 systemctl daemon-reload
 systemctl enable bouwboot
 bash /opt/bouwboot/deploy/update.sh
+bash /opt/bouwboot/deploy/install-autoupdate.sh
