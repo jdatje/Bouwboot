@@ -228,7 +228,9 @@
 
 	const statusText = $derived(
 		phase === 'thinking' ? 'Even nadenken over de vorm…'
-		: phase === 'building' ? `Bouwen… ${liveCount} stenen`
+		: phase === 'building' && liveCount === 0 && !sketch ? 'Tekenen…'
+		: phase === 'building' && liveCount === 0 ? 'Van tekening naar 3D-vorm… (10 tot 60 seconden)'
+		: phase === 'building' ? `Bouwen… ${liveCount} onderdelen`
 		: phase === 'painting' ? 'Kleuren kiezen…'
 		: ''
 	);
