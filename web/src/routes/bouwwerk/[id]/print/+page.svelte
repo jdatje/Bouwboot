@@ -87,6 +87,7 @@
 	.p small { color: #666; }
 	.steps { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
 	.kid .steps { grid-template-columns: 1fr; }
+	@media (max-width: 700px) { .steps { grid-template-columns: minmax(0, 1fr); } }
 	.step { border: 2px solid #e5e8ec; border-radius: 14px; padding: 0.7rem; break-inside: avoid; }
 	.head { display: flex; align-items: flex-start; gap: 0.8rem; }
 	.n { font-size: 2rem; font-weight: 900; min-width: 1.6em; }
