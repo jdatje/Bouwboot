@@ -275,7 +275,15 @@ TRELLIS2_COMMIT = "75fbf0183001ed9876c8dbb35de6b68552ee08bd"
 
 
 def warm_rembg():
+    import time
     import rembg
+    for attempt in range(5):  # the model download from GitHub sometimes times out
+        try:
+            rembg.new_session()
+            return
+        except Exception as e:
+            print("rembg download failed, retrying:", e)
+            time.sleep(10 * (attempt + 1))
     rembg.new_session()
 
 models_volume = modal.Volume.from_name("bouwboot-models", create_if_missing=True)
