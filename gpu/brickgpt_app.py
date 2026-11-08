@@ -446,18 +446,39 @@ class Trellis:
             return solid, colg
 
         def cut_out(img):
-            """The drawings have a plain white background: everything near-white that touches
-            the edge is background (white parts inside the object stay)."""
+            """The drawings have a plain background (green screen; older ones white). The background
+            colour is read from the border; everything close to it that touches the edge is removed.
+            White parts of the model (sails!) survive because the background isn't white."""
             from scipy import ndimage
             a = np.asarray(img).astype(np.int16)
-            whiteish = (a.min(-1) > 190) & ((a.max(-1) - a.min(-1)) < 16)  # white and soft grey shadows
-            lab, _ = ndimage.label(whiteish)
+            border = np.concatenate([a[0], a[-1], a[:, 0], a[:, -1]])
+            bgc = np.median(border, 0)
+            chroma = bgc.max() - bgc.min()
+            if chroma > 60:  # coloured screen
+                d = np.sqrt(((a - bgc) ** 2).sum(-1))
+                # also catch shadows/gradients of the screen: same hue, darker or lighter
+                g = a.astype(np.float32); gn = g / np.maximum(g.sum(-1, keepdims=True), 1)
+                bn = bgc / max(bgc.sum(), 1)
+                hue_d = np.abs(gn - bn).sum(-1)
+                screenish = (d < 90) | (hue_d < 0.12)
+            else:  # white/grey background (old drawings)
+                screenish = (a.min(-1) > 190) & ((a.max(-1) - a.min(-1)) < 16)
+            lab, _ = ndimage.label(screenish)
             edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
             bg = np.isin(lab, list(edge))
             fg = ndimage.binary_opening(~bg, iterations=2)
             fg = ndimage.binary_fill_holes(fg)
+            rgb = a.copy()
+            if chroma > 60:
+                # remove colour spill from the screen on the model's edges
+                near = fg & ndimage.binary_dilation(~fg, iterations=3)
+                ch = int(np.argmax(bgc))
+                others = [c for c in range(3) if c != ch]
+                cap = rgb[..., others].max(-1)
+                spill = near & (rgb[..., ch] > cap)
+                rgb[..., ch] = np.where(spill, cap, rgb[..., ch])
             alpha = (fg * 255).astype(np.uint8)
-            return Image.fromarray(np.dstack([a.astype(np.uint8), alpha]), "RGBA")
+            return Image.fromarray(np.dstack([rgb.astype(np.uint8), alpha]), "RGBA")
 
         @api.post("/shape")
         def shape(req: Req, authorization: str | None = Header(None)):
@@ -478,7 +499,7 @@ class Trellis:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "sizes-1"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "screen-1"}
             print("trellis", stats, flush=True)
             try:
                 models_volume.commit()

@@ -199,8 +199,9 @@ export async function drawToy(prompt: string, variation: number, studs = 24): Pr
 Built only from standard LEGO bricks, plates, slopes and tiles, about ${studs} studs long, so the
 shapes are blocky and stepped like a real brick-built model (no smooth curves, no special parts,
 no minifigures, no stickers, no baseplate). Use classic bright LEGO colours.
-Show the whole model in a three-quarter view from slightly above, centred, on a plain pure white
-background, no shadow, no text.${variation > 0 ? ` Variation #${variation}: a clearly different design or pose.` : ''}`;
+Show the whole model in a three-quarter view from slightly above, centred, on a flat, evenly lit,
+solid pure green (#00FF00) background like a green screen, no shadow, no floor, no text.
+If the model itself contains green, use a solid pure magenta (#FF00FF) background instead.${variation > 0 ? ` Variation #${variation}: a clearly different design or pose.` : ''}`;
 	const models = [process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
 	let last = '';
 	for (const m of models) {

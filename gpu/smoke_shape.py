@@ -14,6 +14,8 @@ G = os.environ["GEMINI_API_KEY"]
 os.makedirs("out", exist_ok=True)
 PRE = os.environ.get("OUT_PREFIX", "")
 PLATES = os.environ.get("PLATES") == "1"
+STUDS = int(os.environ.get("STUDS", "16"))
+SIZE = {16: (2600, False), 24: (9000, True), 32: (20000, True)}.get(STUDS, (2600, False))
 PAL = [("#F4F4F4", 15), ("#1B2A34", 0), ("#A0A5A9", 71), ("#6C6E68", 72), ("#C91A09", 4), ("#720E0F", 320), ("#FE8A18", 25),
        ("#F8BB3D", 191), ("#F2CD37", 14), ("#BBE90B", 27), ("#4B9F4A", 10), ("#237841", 2), ("#184632", 288), ("#9B9A5A", 326),
        ("#A0BCAC", 378), ("#36AEBF", 322), ("#5A93DB", 73), ("#0055BF", 1), ("#0A3463", 272), ("#E4ADC8", 29), ("#C870A0", 5),
@@ -22,8 +24,13 @@ palette = [{"id": i, "hex": h} for h, i in PAL]
 hexof = {i: h for h, i in PAL}
 
 def draw(subject):
-    prompt = (f"A single {subject}, designed as a simple chunky toy, shown in full in a three-quarter view from slightly above, "
-              "centered, on a plain pure white background, no shadow, no text, no stand, bright solid colours, simple shapes.")
+    # same prompt as the web app (web/src/lib/server/gemini.ts drawToy)
+    prompt = (f"A small, simple LEGO model of: {subject}. Built only from standard LEGO bricks, plates, slopes and tiles, "
+              f"about {STUDS} studs long, so the shapes are blocky and stepped like a real brick-built model (no smooth curves, "
+              "no special parts, no minifigures, no stickers, no baseplate). Use classic bright LEGO colours. Show the whole model "
+              "in a three-quarter view from slightly above, centred, on a flat, evenly lit, solid pure green (#00FF00) background "
+              "like a green screen, no shadow, no floor, no text. If the model itself contains green, use a solid pure magenta "
+              "(#FF00FF) background instead.")
     for model in ["gemini-3.1-flash-image", "gemini-2.5-flash-image"]:
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
                           headers={"x-goog-api-key": G, "content-type": "application/json"},
@@ -45,7 +52,8 @@ for i, s in enumerate(subjects):
     img = base64.b64encode(open(fixtures[s], "rb").read()).decode() if s in fixtures else draw(s)
     open(f"out/{PRE}s{i}.png", "wb").write(base64.b64decode(img))
     t = time.time()
-    r = requests.post(url + "/shape", headers=H, json={"image": img, "palette": palette, "plates": PLATES}, timeout=900)
+    r = requests.post(url + "/shape", headers=H, json={"image": img, "palette": palette, "plates": PLATES, "max_studs": STUDS,
+                                                       "max_voxels": SIZE[0], "hollow": SIZE[1], "max_bricks": 4000}, timeout=900)
     if not r.ok:
         print(s, "FAILED", r.status_code, r.text[:500]); continue
     j = r.json(); bricks = j["bricks"]

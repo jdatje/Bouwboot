@@ -13,6 +13,10 @@ on:
         description: "JSON list of subjects for the 3D smoke test"
         required: false
         default: ""
+      studs:
+        description: "build size in studs (16 Klein, 24 Middel, 32 Groot)"
+        required: false
+        default: "16"
       skip_brickgpt:
         description: "skip the BrickGPT smoke test"
         required: false
@@ -71,6 +75,7 @@ jobs:
           SUBJECTS: ${{ github.event.inputs.subjects }}
           OUT_PREFIX: tr
           PLATES: "1"
+          STUDS: ${{ github.event.inputs.studs || '16' }}
         run: python gpu/smoke_shape.py "$URLTR"
       - name: Smoke test BrickGPT
         if: ${{ github.event.inputs.skip_brickgpt == '' }}
