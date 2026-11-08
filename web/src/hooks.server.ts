@@ -1,7 +1,7 @@
 import type { Handle } from '@sveltejs/kit/hooks';
 import { COOKIE, sessionToken } from '#lib/server/auth.ts';
 
-const open = ['/login', '/api/login', '/favicon'];
+const open = ['/login', '/api/login', '/api/version', '/favicon'];
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const p = event.url.pathname;
