@@ -431,19 +431,18 @@ class Trellis:
             np.add.at(cnt, (c[:, 0], c[:, 1], c[:, 2]), 1)
             colg = np.where(cnt[..., None] > 0, acc / np.maximum(cnt, 1)[..., None], np.nan).astype(np.float32)
             # solid = everything the outside can't reach; thicken the shell first so small gaps close
-            thick = ndimage.binary_dilation(shell, iterations=2)
+            thick = ndimage.binary_dilation(shell, iterations=3)
             lab, _ = ndimage.label(~thick)
             border = np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(),
                                                lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))
             outside = np.isin(lab, border[border > 0])
-            solid = ndimage.binary_erosion(~outside, iterations=2) | shell
-            # also fill every vertical column between its lowest and highest surface voxel: robust
-            # against small holes in the surface (a house with a gap in the roof stays a house)
+            solid = ndimage.binary_erosion(~outside, iterations=3) | shell
+            # close only SMALL vertical gaps between surface voxels (a hole in a roof); a big gap is
+            # real empty space (under sails, between a ladder and the roof) and must stay empty
             zs = np.arange(R)[None, None, :]
-            has = shell.any(2)
-            lo = np.where(has, shell.argmax(2), R)[..., None]
-            hi = np.where(has, R - 1 - shell[:, :, ::-1].argmax(2), -1)[..., None]
-            solid |= (zs >= lo) & (zs <= hi)
+            below = np.maximum.accumulate(np.where(shell, zs, -1), axis=2)
+            above = np.minimum.accumulate(np.where(shell, zs, R)[:, :, ::-1], axis=2)[:, :, ::-1]
+            solid |= (below >= 0) & (above < R) & ((above - below) <= 6)
             return solid, colg
 
         def cut_out(img):
@@ -509,7 +508,7 @@ class Trellis:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "screen-2"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "gaps-1"}
             if req.debug:
                 # raw TRELLIS result (before bricks) at 64^3 plus the cut-out, to see where detail is lost
                 from scipy import ndimage as _nd
