@@ -41,7 +41,8 @@ jobs:
           modal deploy gpu/brickgpt_app.py 2>&1 | tee deploy.log
           URL=$(grep -oE 'https://[a-zA-Z0-9.-]+designer-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
           URL3D=$(grep -oE 'https://[a-zA-Z0-9.-]+shaper-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
-          URLTR=$(grep -oE 'https://[a-zA-Z0-9.-]+trellis-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1)
+          URLTR=$(grep -oE 'https://[a-zA-Z0-9.-]+trellis-web[a-zA-Z0-9.-]*\.modal\.run' deploy.log | head -1 || true)
+          URLTR=${URLTR:-https://jdatje--bouwboot-gpu-trellis-web.us-east.modal.run}
           echo "URLTR=$URLTR" >> $GITHUB_ENV
           echo "URL=$URL" >> $GITHUB_ENV
           echo "URL3D=$URL3D" >> $GITHUB_ENV
