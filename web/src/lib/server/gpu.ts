@@ -87,6 +87,10 @@ export async function shape(
 		for (let z = 0; z < 5; z++)
 			for (let x = 0; x < 16; x += 4)
 				for (let y = 0; y < 6; y += 2) out.push({ h: 4, w: 2, x: x + (z % 2) * 2 > 12 ? x : x + (z % 2) * 2, y, z, c: palette[(x + z) % palette.length].id });
+		if (plates)
+			for (let k = 0; k < 3; k++)
+				for (let x = 2 + k * 2; x < 14 - k * 2; x += 2)
+					out.push({ h: 2, w: 2, x, y: 2, z: Math.round((5 + k / 3) * 10000) / 10000, c: palette[0].id, p: 1 });
 		return out;
 	}
 	const res = await fetch((engine === 'trellis' ? URLTR() : URL3D()) + '/shape', {
