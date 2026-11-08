@@ -8,7 +8,7 @@ import { PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, parseBrick, type Brick,
 import { colors as allColors } from '#lib/server/rebrickable.ts';
 
 type Engine = '3d' | 'trellis' | 'brickgpt';
-const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || '3d';
+const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || 'trellis';
 
 /**
  * Streams a new design as server-sent events:

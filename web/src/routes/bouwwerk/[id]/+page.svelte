@@ -154,7 +154,7 @@
 		}
 	}
 
-	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? '3d');
+	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? 'trellis');
 	const ENGINES: [string, string][] = [['trellis', 'TRELLIS (nauwkeurig)'], ['3d', 'TripoSR (snel)'], ['brickgpt', 'BrickGPT']];
 	function reshape(other: string | false = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;

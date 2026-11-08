@@ -467,12 +467,12 @@ class Trellis:
             sizes = parse_sizes(req.sizes)
             studs = max(6, min(req.max_studs, 28))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=4)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=0, saturate=1.0)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "fill-2"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "color-3"}
             print("trellis", stats, flush=True)
             try:
                 models_volume.commit()
