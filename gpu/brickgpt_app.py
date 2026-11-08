@@ -464,20 +464,29 @@ class Trellis:
                 screenish = (d < 90) | (hue_d < 0.12)
             else:  # white/grey background (old drawings)
                 screenish = (a.min(-1) > 190) & ((a.max(-1) - a.min(-1)) < 16)
-            lab, _ = ndimage.label(screenish)
-            edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
-            bg = np.isin(lab, list(edge))
-            fg = ndimage.binary_opening(~bg, iterations=2)
-            fg = ndimage.binary_fill_holes(fg)
+            if chroma > 60:
+                # the screen colour isn't in the model, so every screen pixel goes, also pockets
+                # enclosed by the model (between sails, under arches)
+                fg = ndimage.binary_opening(~screenish, iterations=1)
+                lab, n = ndimage.label(fg)
+                if n:  # drop specks
+                    sizes = ndimage.sum(fg, lab, range(1, n + 1))
+                    fg = np.isin(lab, 1 + np.flatnonzero(sizes >= max(30, sizes.max() * 0.002)))
+            else:
+                lab, _ = ndimage.label(screenish)
+                edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+                bg = np.isin(lab, list(edge))
+                fg = ndimage.binary_opening(~bg, iterations=2)
+                fg = ndimage.binary_fill_holes(fg)
             rgb = a.copy()
             if chroma > 60:
                 # remove colour spill from the screen on the model's edges
                 near = fg & ndimage.binary_dilation(~fg, iterations=3)
-                ch = int(np.argmax(bgc))
-                others = [c for c in range(3) if c != ch]
-                cap = rgb[..., others].max(-1)
-                spill = near & (rgb[..., ch] > cap)
-                rgb[..., ch] = np.where(spill, cap, rgb[..., ch])
+                strong = [c for c in range(3) if bgc[c] > bgc.mean()]
+                weak = [c for c in range(3) if c not in strong]
+                cap = rgb[..., weak].max(-1)
+                for ch in strong:
+                    rgb[..., ch] = np.where(near & (rgb[..., ch] > cap), cap, rgb[..., ch])
             alpha = (fg * 255).astype(np.uint8)
             return Image.fromarray(np.dstack([rgb.astype(np.uint8), alpha]), "RGBA")
 
@@ -500,7 +509,7 @@ class Trellis:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "screen-1"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "screen-2"}
             if req.debug:
                 # raw TRELLIS result (before bricks) at 64^3 plus the cut-out, to see where detail is lost
                 from scipy import ndimage as _nd
