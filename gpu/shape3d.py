@@ -54,7 +54,7 @@ def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600, layer=LAYE
     while True:
         X, Y, Z = max(1, round(ex * s)), max(1, round(ey * s)), max(1, round(ez * s / layer))
         vox = np.zeros((X, Y, Z), bool)
-        vcol = np.zeros((X, Y, Z, 3), np.float32)
+        vcol = np.full((X, Y, Z, 3), np.nan, np.float32)
         xs = np.linspace(0, ex, X + 1).astype(int)
         ys = np.linspace(0, ey, Y + 1).astype(int)
         zs = np.linspace(0, ez, Z + 1).astype(int)
@@ -65,26 +65,32 @@ def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600, layer=LAYE
                     f = cell.mean() if cell.size else 0
                     if f >= 0.3:
                         vox[i, j, k] = True
-                        c = col[xs[i]:max(xs[i + 1], xs[i] + 1), ys[j]:max(ys[j + 1], ys[j] + 1), zs[k]:max(zs[k + 1], zs[k] + 1)]
-                        vcol[i, j, k] = c[cell].mean(0)
+                        c = col[xs[i]:max(xs[i + 1], xs[i] + 1), ys[j]:max(ys[j + 1], ys[j] + 1), zs[k]:max(zs[k + 1], zs[k] + 1)][cell]
+                        c = c[~np.isnan(c).any(-1)]
+                        vcol[i, j, k] = c.mean(0) if len(c) else np.nan
         if vox.sum() * layer / LAYER <= max_voxels or s < 0.2:
             return vox, vcol
         s *= 0.9
 
 
 def surface_colors(vox, vcol):
-    """Colour every voxel like the nearest surface voxel (the inside of the field is unreliable)."""
+    """Gives every voxel the colour of the nearest surface voxel that has a known colour
+    (the inside of the shape and cells without colour information are unreliable)."""
     X, Y, Z = vox.shape
     pad = np.pad(vox, 1)
     inner = pad[2:, 1:-1, 1:-1] & pad[:-2, 1:-1, 1:-1] & pad[1:-1, 2:, 1:-1] & pad[1:-1, :-2, 1:-1] & pad[1:-1, 1:-1, 2:] & pad[1:-1, 1:-1, :-2]
-    surf = vox & ~inner
-    sidx = np.argwhere(surf)
+    known = vox & ~np.isnan(vcol).any(-1)
+    src = known & ~inner
+    if not src.any():
+        src = known
     out = vcol.copy()
-    if len(sidx):
-        for p in np.argwhere(vox & inner):
-            d = ((sidx - p) ** 2).sum(1)
-            q = sidx[np.argmin(d)]
-            out[tuple(p)] = vcol[tuple(q)]
+    sidx = np.argwhere(src)
+    if not len(sidx):
+        out[vox] = 160.0
+        return out
+    for p in np.argwhere(vox & ~src):
+        d = ((sidx - p) ** 2).sum(1)
+        out[tuple(p)] = vcol[tuple(sidx[np.argmin(d)])]
     return out
 
 

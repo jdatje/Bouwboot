@@ -362,11 +362,12 @@ class Trellis:
         class Req(BaseModel):
             image: str
             palette: list[dict]
-            max_studs: int = 20
-            max_bricks: int = 600
+            max_studs: int = 18
+            max_bricks: int = 450
             sizes: list[str] | None = None
             plates: bool = True
             seed: int = 1
+            steps: int = 12
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -377,25 +378,33 @@ class Trellis:
             check(authorization)
             return {"ok": True}
 
-        def voxels(img):
-            """TRELLIS.2 → solid occupancy + colour on a 128 grid (z up)."""
+        def voxels(img, steps):
+            """TRELLIS.2 → solid occupancy + colour on a 128 grid (z up). Colour is NaN where unknown."""
             from scipy import ndimage
-            mesh = self.pipe.run(img, seed=1, pipeline_type="512", preprocess_image=True)[0]
+            params = {"steps": steps}
+            mesh = self.pipe.run(img, seed=1, pipeline_type="512", preprocess_image=True,
+                                 sparse_structure_sampler_params=params, shape_slat_sampler_params=params,
+                                 tex_slat_sampler_params=params)[0]
             coords = mesh.coords.long().cpu().numpy()  # surface voxels at 512
             res = int(round(1 / mesh.voxel_size))
             col = mesh.attrs[:, mesh.layout["base_color"]].float().clamp(0, 1).cpu().numpy() * 255
             R = 128
             c = (coords * R // res).clip(0, R - 1)
-            occ = np.zeros((R, R, R), bool)
-            occ[c[:, 0], c[:, 1], c[:, 2]] = True
+            shell = np.zeros((R, R, R), bool)
+            shell[c[:, 0], c[:, 1], c[:, 2]] = True
             acc = np.zeros((R, R, R, 3), np.float32)
             cnt = np.zeros((R, R, R), np.float32)
             np.add.at(acc, (c[:, 0], c[:, 1], c[:, 2]), col)
             np.add.at(cnt, (c[:, 0], c[:, 1], c[:, 2]), 1)
-            colg = acc / np.maximum(cnt, 1)[..., None]
-            occ = ndimage.binary_closing(occ, iterations=1)
-            occ = ndimage.binary_fill_holes(occ)
-            return occ, colg
+            colg = np.where(cnt[..., None] > 0, acc / np.maximum(cnt, 1)[..., None], np.nan).astype(np.float32)
+            # solid = everything the outside can't reach; thicken the shell first so small gaps close
+            thick = ndimage.binary_dilation(shell, iterations=2)
+            lab, _ = ndimage.label(~thick)
+            border = np.unique(np.concatenate([lab[0].ravel(), lab[-1].ravel(), lab[:, 0].ravel(), lab[:, -1].ravel(),
+                                               lab[:, :, 0].ravel(), lab[:, :, -1].ravel()]))
+            outside = np.isin(lab, border[border > 0])
+            solid = ndimage.binary_erosion(~outside, iterations=2) | shell
+            return solid, colg
 
         def cut_out(img):
             """The drawings have a plain white background: everything near-white that touches
@@ -418,7 +427,7 @@ class Trellis:
             img = Image.open(io.BytesIO(base64.b64decode(req.image))).convert("RGB")
             img = cut_out(img)
             with torch.no_grad():
-                occ, col = voxels(img)
+                occ, col = voxels(img, req.steps)
             t1 = time.time()
             sizes = parse_sizes(req.sizes)
             studs = max(6, min(req.max_studs, 28))
