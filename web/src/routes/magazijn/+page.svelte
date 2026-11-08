@@ -2,7 +2,7 @@
 	import { onMount } from 'svelte';
 	import TopBar from '#lib/components/TopBar.svelte';
 	import PartIcon from '#lib/components/PartIcon.svelte';
-	import { LIBRARY, PLATES, PALETTE } from '#lib/bricks.ts';
+	import { LIBRARY, PLATES, SLOPES45, SLOPES33, TILES, PALETTE } from '#lib/bricks.ts';
 
 	type Line = { part: string; color: number; owned: number; lost: number; reserved: number; available: number; size: string | null; plate: boolean; name: string; img: string | null; colorName: string; hex: string };
 	type SetRow = { set_num: string; name: string; img: string | null; num_parts: number; assembled: number };
@@ -13,8 +13,9 @@
 	let setNum = $state('');
 	let setMsg = $state('');
 	let busy = $state(false);
-	let addSize = $state('b2x4');
-	const addPart = $derived(addSize[0] === 'p' ? PLATES[addSize.slice(1)] : LIBRARY[addSize.slice(1)]);
+	let addSize = $state('s2x4');
+	const TABLES: Record<string, Record<string, string>> = { s: LIBRARY, p: PLATES, a: SLOPES45, b: SLOPES33, t: TILES };
+	const addPart = $derived(TABLES[addSize[0]][addSize.slice(1)]);
 	let addColor = $state(4);
 	let addQty = $state(1);
 	let search = $state('');
@@ -100,8 +101,11 @@
 			<h2>Los toevoegen</h2>
 			<div class="addgrid">
 				<select bind:value={addSize} aria-label="Maat">
-					{#each Object.keys(LIBRARY) as s}<option value={'b' + s}>Steen {s}</option>{/each}
+					{#each Object.keys(LIBRARY) as s}<option value={'s' + s}>Steen {s}</option>{/each}
 					{#each Object.keys(PLATES) as s}<option value={'p' + s}>Plaat {s}</option>{/each}
+					{#each Object.keys(SLOPES45) as s}<option value={'a' + s}>Dakpan 45° {s}</option>{/each}
+					{#each Object.keys(SLOPES33) as s}<option value={'b' + s}>Dakpan 33° {s}</option>{/each}
+					{#each Object.keys(TILES) as s}<option value={'t' + s}>Tegel {s}</option>{/each}
 				</select>
 				<select bind:value={addColor} aria-label="Kleur">{#each PALETTE as c}<option value={c.id}>{c.name}</option>{/each}</select>
 				<input type="number" min="1" max="999" bind:value={addQty} aria-label="Aantal" />
@@ -122,7 +126,7 @@
 			<ul class="parts">
 				{#each shown as l (l.part + '/' + l.color)}
 					<li class:gone={l.available === 0}>
-						{#if l.size}<PartIcon size={l.size} plate={l.plate} hex={l.hex} px={10} />{:else if l.img}<img src={l.img} alt="" />{:else}<span class="sw" style:background={l.hex}></span>{/if}
+						{#if l.size}<PartIcon part={l.part} hex={l.hex} px={10} />{:else if l.img}<img src={l.img} alt="" />{:else}<span class="sw" style:background={l.hex}></span>{/if}
 						<div class="pinfo">
 							<span>{l.name}</span>
 							<small class="muted"><span class="dotc" style:background={l.hex}></span>{l.colorName}

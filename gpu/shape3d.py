@@ -7,9 +7,16 @@ bridging the seams of the layer below so the build holds together).
 import numpy as np
 
 # brick sizes (short, long) that exist in the library, biggest first
-SIZES = [(2, 6), (2, 4), (1, 8), (1, 6), (2, 2), (1, 4), (1, 2), (1, 1)]
-# plates (a third of a brick high) that are easy to get
-PLATE_SIZES = [(2, 8), (2, 6), (2, 4), (1, 8), (1, 6), (2, 3), (2, 2), (1, 4), (1, 3), (1, 2), (1, 1)]
+# bricks and plates (short side, long side) that are easy to get, biggest first
+SIZES = sorted([(2, 10), (2, 8), (2, 6), (2, 4), (2, 3), (2, 2), (1, 12), (1, 10), (1, 8), (1, 6), (1, 4),
+                (1, 3), (1, 2), (1, 1)], key=lambda s: -s[0] * s[1])
+PLATE_SIZES = sorted([(6, 8), (6, 6), (4, 8), (4, 6), (4, 4), (2, 10), (2, 8), (2, 6), (2, 4), (2, 3), (2, 2),
+                      (1, 8), (1, 6), (1, 4), (1, 3), (1, 2), (1, 1)], key=lambda s: -s[0] * s[1])
+# slopes: (depth, width) — depth runs down the slope. 45°: 2 deep; 33°: 3 deep
+SLOPES = {"s33": [(3, 2), (3, 1)], "s45": [(2, 4), (2, 2), (2, 1)]}
+# tiles (smooth plates) only go where nothing sits on top
+TILE_SIZES = {(1, 1), (1, 2), (1, 3), (1, 4), (1, 6), (1, 8), (2, 2), (2, 4)}
+DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]  # index = slope direction (downhill)
 LAYER = 1.2  # brick height in studs
 PLATE = 0.4  # plate height in studs
 
@@ -40,37 +47,43 @@ def sample_grid(model, scene_code, res=96, threshold=25.0, device="cuda"):
     return dens > threshold, col
 
 
-def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600, layer=LAYER):
-    """Scales the shape so it fits in max_studs x max_studs x max_layers and returns
-    voxels [X, Y, Z] (bool) and their colours [X, Y, Z, 3]."""
+def to_voxels(occ, col, max_studs=20, max_layers=18, max_voxels=2600, layer=LAYER, max_height=None):
+    """Scales the shape so it fits in max_studs x max_studs (and max_height studs high) and returns
+    voxels [X, Y, Z] (bool) and their colours [X, Y, Z, 3] (NaN where unknown).
+    max_voxels counts in brick-sized cells."""
     idx = np.argwhere(occ)
     if len(idx) == 0:
         raise ValueError("empty shape")
     lo, hi = idx.min(0), idx.max(0) + 1
     occ, col = occ[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]], col[lo[0]:hi[0], lo[1]:hi[1], lo[2]:hi[2]]
     ex, ey, ez = occ.shape
-    # studs per grid cell
-    s = min(max_studs / max(ex, ey), max_layers * LAYER / ez)
+    max_h = max_height if max_height is not None else max_layers * LAYER
+    s = min(max_studs / max(ex, ey), max_h / ez)
+    fine = np.argwhere(occ)
+    fcol = col[tuple(fine.T)]
     while True:
         X, Y, Z = max(1, round(ex * s)), max(1, round(ey * s)), max(1, round(ez * s / layer))
-        vox = np.zeros((X, Y, Z), bool)
-        vcol = np.full((X, Y, Z, 3), np.nan, np.float32)
-        xs = np.linspace(0, ex, X + 1).astype(int)
-        ys = np.linspace(0, ey, Y + 1).astype(int)
-        zs = np.linspace(0, ez, Z + 1).astype(int)
-        for i in range(X):
-            for j in range(Y):
-                for k in range(Z):
-                    cell = occ[xs[i]:max(xs[i + 1], xs[i] + 1), ys[j]:max(ys[j + 1], ys[j] + 1), zs[k]:max(zs[k + 1], zs[k] + 1)]
-                    f = cell.mean() if cell.size else 0
-                    if f >= 0.3:
-                        vox[i, j, k] = True
-                        c = col[xs[i]:max(xs[i + 1], xs[i] + 1), ys[j]:max(ys[j + 1], ys[j] + 1), zs[k]:max(zs[k + 1], zs[k] + 1)][cell]
-                        c = c[~np.isnan(c).any(-1)]
-                        vcol[i, j, k] = c.mean(0) if len(c) else np.nan
+        cx = np.minimum(fine[:, 0] * X // ex, X - 1)
+        cy = np.minimum(fine[:, 1] * Y // ey, Y - 1)
+        cz = np.minimum(fine[:, 2] * Z // ez, Z - 1)
+        cell = (cx * Y + cy) * Z + cz
+        n = X * Y * Z
+        filled = np.bincount(cell, minlength=n)
+        # fine voxels per coarse cell (also counting empty ones) = cell volume
+        vol = (np.bincount(np.minimum(np.arange(ex) * X // ex, X - 1), minlength=X)[:, None, None]
+               * np.bincount(np.minimum(np.arange(ey) * Y // ey, Y - 1), minlength=Y)[None, :, None]
+               * np.bincount(np.minimum(np.arange(ez) * Z // ez, Z - 1), minlength=Z)[None, None, :]).ravel()
+        vox = (filled / np.maximum(vol, 1) >= 0.3).reshape(X, Y, Z)
+        ok = ~np.isnan(fcol).any(1)
+        csum = np.zeros((n, 3))
+        for c in range(3):
+            csum[:, c] = np.bincount(cell[ok], weights=fcol[ok, c], minlength=n)
+        ccnt = np.bincount(cell[ok], minlength=n)
+        vcol = np.where(ccnt[:, None] > 0, csum / np.maximum(ccnt, 1)[:, None], np.nan).reshape(X, Y, Z, 3).astype(np.float32)
+        vcol[~vox] = np.nan
         if vox.sum() * layer / LAYER <= max_voxels or s < 0.2:
             return vox, vcol
-        s *= 0.9
+        s *= 0.92
 
 
 def surface_colors(vox, vcol):
@@ -124,21 +137,46 @@ def quantize(colors, k=5, seed=0):
 
 
 def smooth_labels(lab, vox, passes=1):
-    """Majority filter per layer so colours form patches instead of speckles."""
-    X, Y, Z = lab.shape
+    """Majority filter per layer (3x3) so colours form patches instead of speckles."""
     for _ in range(passes):
+        labels = np.unique(lab[vox])
+        counts = []
+        for l in labels:
+            m = np.pad((lab == l) & vox, ((1, 1), (1, 1), (0, 0))).astype(np.int16)
+            c = sum(m[1 + dx:m.shape[0] - 1 + dx, 1 + dy:m.shape[1] - 1 + dy] for dx in (-1, 0, 1) for dy in (-1, 0, 1))
+            counts.append(c)
+        counts = np.stack(counts)
+        best = counts.argmax(0)
+        strong = counts.max(0) >= 5
         new = lab.copy()
-        for k in range(Z):
-            for i in range(X):
-                for j in range(Y):
-                    if not vox[i, j, k]:
-                        continue
-                    nb = lab[max(0, i - 1):i + 2, max(0, j - 1):j + 2, k][vox[max(0, i - 1):i + 2, max(0, j - 1):j + 2, k]]
-                    vals, counts = np.unique(nb, return_counts=True)
-                    if counts.max() >= 5:
-                        new[i, j, k] = vals[np.argmax(counts)]
+        upd = vox & strong
+        new[upd] = labels[best[upd]]
         lab = new
     return lab
+
+
+def erode(vox, r_xy, r_z):
+    """Voxels that are at least r_xy cells (sideways) and r_z cells (up/down) inside the shape."""
+    out = vox.copy()
+    X, Y, Z = vox.shape
+    pad = np.pad(vox, ((r_xy, r_xy), (r_xy, r_xy), (r_z, r_z)))
+    for dx in range(-r_xy, r_xy + 1):
+        for dy in range(-r_xy, r_xy + 1):
+            out &= pad[r_xy + dx:r_xy + dx + X, r_xy + dy:r_xy + dy + Y, r_z:r_z + Z]
+    for dz in range(-r_z, r_z + 1):
+        out &= pad[r_xy:r_xy + X, r_xy:r_xy + Y, r_z + dz:r_z + dz + Z]
+    return out
+
+
+def hollow(vox, wall=2, layer=PLATE, pillar_every=6):
+    """Empties the inside (like real Lego sculptures), keeping a shell of `wall` studs and
+    2x2 pillars every few studs so roofs over the hollow stay supported."""
+    rz = max(1, int(round(wall * 1.2 / layer)))  # same thickness up/down, in layers
+    inside = erode(vox, wall, rz)
+    X, Y, Z = vox.shape
+    gx, gy = np.meshgrid(np.arange(X) % pillar_every < 2, np.arange(Y) % pillar_every < 2, indexing="ij")
+    pillars = (gx & gy)[:, :, None]
+    return vox & ~(inside & ~pillars)
 
 
 def brickify(vox, lab, sizes=None):
@@ -177,7 +215,7 @@ def brickify(vox, lab, sizes=None):
                             score -= 1000
                         if score > best_score:
                             best, best_score = (h, w), score
-                h, w = best
+                h, w = best or (1, 1)
                 owner[i:i + h, j:j + w, k] = len(bricks)
                 lab[i:i + h, j:j + w, k] = c
                 bricks.append((h, w, i, j, k, int(c)))
@@ -212,17 +250,91 @@ def _tile_layer(region, lab, owner, k, below, use, idx0, height, prefer_x, sizes
                         score -= 1000
                     if score > best_score:
                         best, best_score = (h, w), score
-            h, w = best
+            # nothing owned fits here: a 1x1 it is (ends up on the shopping list)
+            h, w = best or (1, 1)
             taken[i:i + h, j:j + w] = True
             lab[i:i + h, j:j + w] = c
             out.append((h, w, i, j, k, height, int(c)))
     return out
 
 
-def brickify_plates(vox, lab, sizes=None):
-    """Plate-layer grid (3 layers per brick). Where a column is solid for a whole brick band
-    (and one colour), use bricks; elsewhere plates. Returns pieces (h, w, x, y, z, height, label)
-    with z and height in plate units, and an owner grid."""
+def _allowed(kind, dims, sizes):
+    if sizes is None:
+        return True
+    return (kind, tuple(sorted(dims))) in sizes
+
+
+def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes):
+    """Finds staircase edges starting at plate layer k and covers them with slopes.
+    Seen from the outside (c0) inwards, a 45° slope (2 deep) matches heights [1-2, 3] plates and a
+    33° slope (3 deep) matches [1, 2, 3] plates, with nothing on top of the high row."""
+    if not use_slopes:
+        return
+    X, Y, Z = vox.shape
+    if k + 2 >= Z:
+        return
+    # height of the column from layer k up (0..3), only counting cells nobody owns yet
+    col = vox[:, :, k:k + 3] & (owner[:, :, k:k + 3] < 0)
+    hgt = np.where(~col[:, :, 0], 0, np.where(~col[:, :, 1], 1, np.where(~col[:, :, 2], 2, 3)))
+    above = vox[:, :, k + 3] if k + 3 < Z else np.zeros((X, Y), bool)
+    colour = lab[:, :, k]
+    landing = vox[:, :, k - 1] if k > 0 else np.ones((X, Y), bool)
+    # (kind, allowed heights per row from the outside in, fill): "fill" slopes sit in the air above
+    # a lower step (steep stairs); the others trim a gentle staircase
+    patterns = [("s33", [(1,), (2,), (3,)], False), ("s45", [(1, 2), (3,)], False), ("s45", [(0,), (3,)], True)]
+    for kind, pat, fill in patterns:
+        if fill and k == 0:
+            continue
+        depth = len(pat)
+        for di, (dx, dy) in enumerate(DIRS):
+            for d_, width in SLOPES[kind]:
+                if not _allowed(kind, (d_, width), sizes):
+                    continue
+                starts = (hgt == 0) & landing & ~vox[:, :, k] if fill else (hgt >= 1) & (hgt <= 2)
+                for ex, ey in np.argwhere(starts):
+                    ok = True
+                    cells = []
+                    for j in range(width):
+                        for r in range(depth):
+                            px = ex - dx * r + (j if dx == 0 else 0)
+                            py = ey - dy * r + (j if dy == 0 else 0)
+                            if not (0 <= px < X and 0 <= py < Y) or hgt[px, py] not in pat[r] or above[px, py] and r == depth - 1:
+                                ok = False
+                                break
+                            if fill and r == 0:  # air above the lower step: must rest on it, not be owned
+                                if not landing[px, py] or vox[px, py, k] or (owner[px, py, k:k + 3] >= 0).any():
+                                    ok = False
+                                    break
+                                cells.append((px, py))
+                                continue
+                            ref = colour[ex - dx, ey - dy] if fill else colour[ex, ey]
+                            if colour[px, py] != ref:
+                                ok = False
+                                break
+                            if r == 0:  # downhill of the slope: open, with something to land on
+                                qx, qy = px + dx, py + dy
+                                if not (0 <= qx < X and 0 <= qy < Y) or vox[qx, qy, k] or not landing[qx, qy]:
+                                    ok = False
+                                    break
+                            cells.append((px, py))
+                        if not ok:
+                            break
+                    if not ok:
+                        continue
+                    xs = [c[0] for c in cells]
+                    ys = [c[1] for c in cells]
+                    x0, y0 = min(xs), min(ys)
+                    h, w = max(xs) - x0 + 1, max(ys) - y0 + 1
+                    owner[x0:x0 + h, y0:y0 + w, k:k + 3] = len(pieces)
+                    hgt[x0:x0 + h, y0:y0 + w] = -1
+                    c = colour[ex - dx, ey - dy] if fill else colour[ex, ey]
+                    pieces.append((h, w, x0, y0, k, 3, int(c), kind, di))
+
+
+def brickify_plates(vox, lab, sizes=None, slopes=True):
+    """Plate-layer grid (3 layers per brick). Slopes go on stepped top edges; where a column is
+    solid for a whole brick band (and one colour) bricks are used, elsewhere plates. Returns pieces
+    (h, w, x, y, z, height, label, kind, dir) with z and height in plate units, and an owner grid."""
     X, Y, Z = vox.shape
     lab = lab.copy()
     owner = -np.ones((X, Y, Z), int)
@@ -232,12 +344,15 @@ def brickify_plates(vox, lab, sizes=None):
     pen_p = None
     if not use_p:  # no plates owned: allow them, but only as a last resort
         use_p, pen_p = [(1, 1), (1, 2)], {(1, 1), (1, 2)}
+    # slopes first, at any plate height: they sit on the top edges where the shape steps down
+    for k in range(1, Z - 2):
+        place_slopes(vox, lab, owner, k, pieces, sizes, slopes)
     for band in range(0, Z, 3):
         prefer_x = (band // 3) % 2 == 0
         full = np.ones((X, Y), bool)
         for d in range(3):
             if band + d < Z:
-                full &= vox[:, :, band + d]
+                full &= vox[:, :, band + d] & (owner[:, :, band + d] < 0)
                 if d:
                     full &= lab[:, :, band + d] == lab[:, :, band]
             else:
@@ -249,7 +364,7 @@ def brickify_plates(vox, lab, sizes=None):
             for h, w, x, y, z, ht, c in new:
                 owner[x:x + h, y:y + w, z:z + 3] = len(pieces)
                 lab[x:x + h, y:y + w, z:z + 3] = c
-                pieces.append((h, w, x, y, z, 3, c))
+                pieces.append((h, w, x, y, z, 3, c, "", 0))
         for d in range(3):
             k = band + d
             if k >= Z:
@@ -262,7 +377,17 @@ def brickify_plates(vox, lab, sizes=None):
             new = _tile_layer(rest, l2, owner, k, below, use_p, len(pieces), 1, (k % 2 == 0) != prefer_x, pen_p)
             for h, w, x, y, z, ht, c in new:
                 owner[x:x + h, y:y + w, z] = len(pieces)
-                pieces.append((h, w, x, y, z, 1, c))
+                pieces.append((h, w, x, y, z, 1, c, "", 0))
+    # plates with nothing on top become tiles (smooth), where that tile exists
+    for i, (h, w, x, y, z, ht, c, kind, di) in enumerate(pieces):
+        if ht != 1 or kind:
+            continue
+        dims = (min(h, w), max(h, w))
+        if dims not in TILE_SIZES or not _allowed("t", dims, sizes):
+            continue
+        if z + 1 < Z and vox[x:x + h, y:y + w, z + 1].any():
+            continue
+        pieces[i] = (h, w, x, y, z, ht, c, "t", 0)
     return pieces, owner
 
 
@@ -276,7 +401,8 @@ def keep_grounded_pieces(pieces, owner):
             a = parent[a]
         return a
 
-    for bi, (h, w, x, y, z, ht, _) in enumerate(pieces):
+    for bi, p in enumerate(pieces):
+        h, w, x, y, z = p[:5]
         if z == 0:
             parent[find(bi)] = find(n)
         else:
@@ -351,8 +477,12 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
-def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False, brighten=7, saturate=1.15):
-    vox, vcol = to_voxels(occ, col, max_studs=max_studs, layer=PLATE if plates else LAYER)
+def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False, brighten=7, saturate=1.15,
+                    max_voxels=2600, hollow_inside=False, slopes=True, max_height=None):
+    vox, vcol = to_voxels(occ, col, max_studs=max_studs, layer=PLATE if plates else LAYER,
+                          max_voxels=max_voxels,
+                          # bigger builds may also be taller (a tower should grow with the size choice)
+                          max_height=max_height if max_height is not None else max(21.6, max_studs * 1.1))
     vcol = surface_colors(vox, vcol)
     pal_rgb = np.stack([hex_rgb(p["hex"]) for p in palette])
     pal_lab = to_lab(pal_rgb)
@@ -368,23 +498,32 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, p
     lab = smooth_labels(lab, vox, passes=2)
     vox, lab = support(vox, lab)
     if plates:
+        if hollow_inside:
+            vox = hollow(vox)
         best = None
-        for flip in (False, True):
+        flips = (False, True) if vox.sum() < 15000 else (False,)
+        for flip in flips:
             v = vox[::-1] if flip else vox
             l = lab[::-1] if flip else lab
-            pieces, owner = brickify_plates(v, l, sizes)
+            pieces, owner = brickify_plates(v, l, sizes, slopes)
             kept = keep_grounded_pieces(pieces, owner)
             if flip:
                 X = vox.shape[0]
-                kept = [(h, w, X - x - h, y, z, ht, c) for h, w, x, y, z, ht, c in kept]
+                fl = {0: 1, 1: 0, 2: 2, 3: 3}
+                kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") else d)
+                        for h, w, x, y, z, ht, c, k, d in kept]
             if best is None or len(kept) > len(best):
                 best = kept
         best.sort(key=lambda b: (b[4], -b[5], b[2], b[3]))
         out = []
-        for h, w, x, y, z, ht, l in best:
-            d = {"h": h, "w": w, "x": x, "y": y, "z": round(z / 3, 4), "c": palette[l]["id"]}
+        for h, w, x, y, z, ht, l, kind, di in best:
+            d = {"h": int(h), "w": int(w), "x": int(x), "y": int(y), "z": round(int(z) / 3, 4), "c": palette[int(l)]["id"]}
             if ht == 1:
                 d["p"] = 1
+            if kind:
+                d["k"] = kind
+            if kind.startswith("s"):
+                d["d"] = int(di)
             out.append(d)
         return out
     # tile a few ways and keep the one where the most bricks hold on to the ground
@@ -407,4 +546,4 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, p
                 best = kept
     bricks = best
     bricks.sort(key=lambda b: (b[4], b[2], b[3]))
-    return [{"h": h, "w": w, "x": x, "y": y, "z": z, "c": palette[l]["id"]} for h, w, x, y, z, l in bricks]
+    return [{"h": int(h), "w": int(w), "x": int(x), "y": int(y), "z": int(z), "c": palette[int(l)]["id"]} for h, w, x, y, z, l in bricks]

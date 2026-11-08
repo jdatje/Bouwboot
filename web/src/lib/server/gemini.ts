@@ -188,33 +188,40 @@ function mock(parts: Part[]): unknown {
 }
 
 /** Draws the requested thing as a simple toy on a white background (for the 3D route). Returns base64. */
-export async function drawToy(prompt: string, variation: number): Promise<{ data: string; mime: string }> {
+export async function drawToy(prompt: string, variation: number, studs = 24): Promise<{ data: string; mime: string }> {
 	if (process.env.MOCK_GEMINI) {
 		const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==';
 		return { data: png, mime: 'image/png' };
 	}
 	const key = process.env.GEMINI_API_KEY;
 	if (!key) throw new Error('GEMINI_API_KEY ontbreekt');
-	const text = `Draw: ${prompt}.
-Make it a single object, designed as a simple chunky toy with big clear shapes, shown in full in a
-three-quarter view from slightly above, centred, on a plain pure white background. No shadow, no text,
-no stand or base, no other objects. Bright, solid colours.${variation > 0 ? ` Variation #${variation}: a clearly different pose or design.` : ''}`;
+	const text = `A small, simple LEGO model of: ${prompt}.
+Built only from standard LEGO bricks, plates, slopes and tiles, about ${studs} studs long, so the
+shapes are blocky and stepped like a real brick-built model (no smooth curves, no special parts,
+no minifigures, no stickers, no baseplate). Use classic bright LEGO colours.
+Show the whole model in a three-quarter view from slightly above, centred, on a plain pure white
+background, no shadow, no text.${variation > 0 ? ` Variation #${variation}: a clearly different design or pose.` : ''}`;
 	const models = [process.env.GEMINI_IMAGE_MODEL || 'gemini-3.1-flash-image', 'gemini-2.5-flash-image'];
 	let last = '';
 	for (const m of models) {
-		const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
-			method: 'POST',
-			headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-			body: JSON.stringify({
-				contents: [{ role: 'user', parts: [{ text }] }],
-				generationConfig: { responseModalities: ['IMAGE'], imageConfig: { aspectRatio: '1:1' } }
-			})
-		});
-		if (!res.ok) { last = `${m} ${res.status}`; continue; }
-		const j = await res.json();
-		for (const p of j.candidates?.[0]?.content?.parts ?? [])
-			if (p.inlineData?.data) return { data: p.inlineData.data, mime: p.inlineData.mimeType ?? 'image/png' };
-		last = `${m}: geen afbeelding`;
+		// a small image is plenty for the 3D step and costs a third less; fall back if not supported
+		for (const imageConfig of [{ aspectRatio: '1:1', imageSize: '512' }, { aspectRatio: '1:1' }]) {
+			const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent`, {
+				method: 'POST',
+				headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+				body: JSON.stringify({
+					contents: [{ role: 'user', parts: [{ text }] }],
+					generationConfig: { responseModalities: ['IMAGE'], imageConfig }
+				})
+			});
+			if (res.status === 400) { last = `${m} 400`; continue; }
+			if (!res.ok) { last = `${m} ${res.status}`; break; }
+			const j = await res.json();
+			for (const p of j.candidates?.[0]?.content?.parts ?? [])
+				if (p.inlineData?.data) return { data: p.inlineData.data, mime: p.inlineData.mimeType ?? 'image/png' };
+			last = `${m}: geen afbeelding`;
+			break;
+		}
 	}
 	throw new Error('Tekenen mislukt (' + last + ')');
 }

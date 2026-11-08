@@ -10,21 +10,52 @@ export const RAW = '#cfd3d6'; // colour of bricks before they are painted
 const geoCache = new Map<string, THREE.BufferGeometry>();
 const heightOf = (b: Brick) => (b.p ? H / 3 : H);
 
-function brickGeometry(h: number, w: number, plate = false): THREE.BufferGeometry {
-	const k = `${h}x${w}${plate ? 'p' : ''}`;
-	let g = geoCache.get(k);
+function stud(x: number, y: number, z: number): THREE.BufferGeometry {
+	const s = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 14);
+	s.translate(x, y, z);
+	return s;
+}
+
+/** A slope: `depth` studs deep (downhill along +x), `width` wide (along z); studs on the high row. */
+function slopeGeometry(depth: number, width: number): THREE.BufferGeometry {
+	const low = H * 0.18;
+	const shape = new THREE.Shape();
+	const x0 = -depth / 2 + 0.02, x1 = depth / 2 - 0.02;
+	shape.moveTo(x0, -H / 2);
+	shape.lineTo(x1, -H / 2);
+	shape.lineTo(x1, -H / 2 + low);
+	shape.lineTo(x0 + 1, H / 2 - 0.01);
+	shape.lineTo(x0, H / 2 - 0.01);
+	shape.closePath();
+	const body = new THREE.ExtrudeGeometry(shape, { depth: width - 0.04, bevelEnabled: false });
+	body.translate(0, 0, -(width - 0.04) / 2);
+	const parts: THREE.BufferGeometry[] = [body];
+	for (let j = 0; j < width; j++) parts.push(stud(-depth / 2 + 0.5, H / 2 + 0.1, j - width / 2 + 0.5));
+	return mergeGeometries(parts.map((p) => (p.index ? p.toNonIndexed() : p)).map((p) => { p.deleteAttribute('uv'); return p; }))!;
+}
+
+function brickGeometry(b: Brick): THREE.BufferGeometry {
+	const { h, w } = b;
+	const plate = !!b.p;
+	const key = `${h}x${w}${plate ? 'p' : ''}${b.k ?? ''}${b.d ?? ''}`;
+	let g = geoCache.get(key);
 	if (g) return g;
-	const ht = plate ? H / 3 : H;
-	const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(h - 0.04, ht - 0.02, w - 0.04)];
-	for (let i = 0; i < h; i++)
-		for (let j = 0; j < w; j++) {
-			const s = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 14);
-			s.translate(i - h / 2 + 0.5, ht / 2 + 0.1, j - w / 2 + 0.5);
-			parts.push(s);
-		}
-	g = mergeGeometries(parts.map((p) => p.toNonIndexed()))!;
+	if (b.k === 's45' || b.k === 's33') {
+		const alongX = b.d === 0 || b.d === 1;
+		g = slopeGeometry(alongX ? h : w, alongX ? w : h);
+		// downhill +x is the default; turn for the other directions
+		const turn = [0, Math.PI, -Math.PI / 2, Math.PI / 2][b.d ?? 0];
+		g.rotateY(turn);
+	} else {
+		const ht = plate ? H / 3 : H;
+		const parts: THREE.BufferGeometry[] = [new THREE.BoxGeometry(h - 0.04, ht - 0.02, w - 0.04)];
+		if (b.k !== 't')
+			for (let i = 0; i < h; i++)
+				for (let j = 0; j < w; j++) parts.push(stud(i - h / 2 + 0.5, ht / 2 + 0.1, j - w / 2 + 0.5));
+		g = mergeGeometries(parts.map((p) => p.toNonIndexed()).map((p) => { p.deleteAttribute('uv'); return p; }))!;
+	}
 	g.computeVertexNormals();
-	geoCache.set(k, g);
+	geoCache.set(key, g);
 	return g;
 }
 
@@ -139,7 +170,7 @@ export class BrickScene {
 
 	add(brick: Brick, color: string = RAW, animate = true) {
 		const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.35, metalness: 0.0 });
-		const mesh = new THREE.Mesh(brickGeometry(brick.h, brick.w, !!brick.p), mat);
+		const mesh = new THREE.Mesh(brickGeometry(brick), mat);
 		const it: Item = { mesh, mat, brick, t0: animate ? performance.now() : -1 };
 		this.place(it, animate ? 7 : 0);
 		this.group.add(mesh);

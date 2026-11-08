@@ -94,7 +94,7 @@
 			const res = await fetch('/api/design', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined }),
+				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined, size: page.url.searchParams.get('g') ?? 'm' }),
 				signal: abort.signal
 			});
 			if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Je bent niet (meer) ingelogd.' : 'De server reageert niet.');
@@ -159,7 +159,7 @@
 	function reshape(other: string | false = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;
 		const m = other || engine;
-		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&t=${Date.now()}`);
+		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&g=${page.url.searchParams.get('g') ?? 'm'}&t=${Date.now()}`);
 	}
 
 	let recolorN = 1;
@@ -238,7 +238,7 @@
 
 <svelte:head><title>{info?.build.title ?? liveTitle ?? 'Bouwen'} · Bouwboot</title></svelte:head>
 
-<TopBar {q} onlyMine={mine} />
+<TopBar {q} onlyMine={mine} size={page.url.searchParams.get('g') ?? 'm'} />
 
 <main class:kid>
 	<section class="stage">
@@ -274,7 +274,7 @@
 		<div class="headline">
 			<h1>{info?.build.title ?? liveTitle ?? ''}</h1>
 			{#if info}
-				<p class="muted small">{info.build.bricks.length} stenen · “{info.build.prompt}”</p>
+				<p class="muted small">{info.build.bricks.length} onderdelen · “{info.build.prompt}”</p>
 			{/if}
 		</div>
 		{#if info}
@@ -290,9 +290,9 @@
 			</div>
 			<p class="have">
 				{#if info.coverage.have === info.coverage.total}
-					Je hebt alle {info.coverage.total} stenen al in huis!
+					Je hebt alle {info.coverage.total} onderdelen al in huis!
 				{:else}
-					Je hebt al <b>{info.coverage.have}</b> van de {info.coverage.total} stenen.
+					Je hebt al <b>{info.coverage.have}</b> van de {info.coverage.total} onderdelen.
 				{/if}
 			</p>
 			{#if info.build.saved}
@@ -385,9 +385,9 @@
 					{:else if info.build.order_status === 'binnen'}
 						<p><b>Alles is binnen</b> en staat in je magazijn. Veel bouwplezier!</p>
 					{:else if info.coverage.missing.length === 0}
-						<p>Je hebt alle stenen al. Niks te kopen!</p>
+						<p>Je hebt alle onderdelen al. Niks te kopen!</p>
 					{:else}
-						<p>Je mist nog <b>{info.coverage.total - info.coverage.have}</b> stenen:</p>
+						<p>Je mist nog <b>{info.coverage.total - info.coverage.have}</b> onderdelen:</p>
 						<ul class="order">
 							{#each info.coverage.missing as l}
 								<li><PartIcon part={l.part} hex={hex(l.color)} /> <span>{l.qty}× {pname(l.part)} <small class="muted">{cname(l.color)}</small></span></li>

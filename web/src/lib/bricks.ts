@@ -1,18 +1,27 @@
 // Shared brick model, used by the browser and the server.
 
-/** z is in brick layers (a plate sits at thirds: 0, 0.3333, ...). p = 1 for a plate (a third as high). */
-export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number; p?: number };
+/**
+ * z is in brick layers (a plate sits at thirds: 0, 0.3333, ...). p = 1 for a plate (a third as high).
+ * k = special kind: 's45' / 's33' slope (d = downhill direction: 0 +x, 1 -x, 2 +y, 3 -y) or 't' tile.
+ */
+export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number; p?: number; k?: 's45' | 's33' | 't'; d?: number };
 
 /** BrickGPT's brick library: size (short x long) → LDraw/Rebrickable/BrickLink part number. */
 export const LIBRARY: Record<string, string> = {
 	'1x1': '3005',
 	'1x2': '3004',
+	'1x3': '3622',
 	'1x4': '3010',
 	'1x6': '3009',
 	'1x8': '3008',
+	'1x10': '6111',
+	'1x12': '6112',
 	'2x2': '3003',
+	'2x3': '3002',
 	'2x4': '3001',
-	'2x6': '2456'
+	'2x6': '2456',
+	'2x8': '3007',
+	'2x10': '3006'
 };
 /** Plates: a third of a brick high. */
 export const PLATES: Record<string, string> = {
@@ -26,7 +35,27 @@ export const PLATES: Record<string, string> = {
 	'2x3': '3021',
 	'2x4': '3020',
 	'2x6': '3795',
-	'2x8': '3034'
+	'2x8': '3034',
+	'2x10': '3832',
+	'4x4': '3031',
+	'4x6': '3032',
+	'4x8': '3035',
+	'6x6': '3958',
+	'6x8': '3036'
+};
+/** Slopes, keyed by width x depth (sorted): 45° are 2 deep, 33° are 3 deep. */
+export const SLOPES45: Record<string, string> = { '1x2': '3040', '2x2': '3039', '2x4': '3037' };
+export const SLOPES33: Record<string, string> = { '1x3': '4286', '2x3': '3298' };
+/** Tiles: smooth plates without studs. */
+export const TILES: Record<string, string> = {
+	'1x1': '3070',
+	'1x2': '3069',
+	'1x3': '63864',
+	'1x4': '2431',
+	'1x6': '6636',
+	'1x8': '4162',
+	'2x2': '3068',
+	'2x4': '87079'
 };
 /** Part number → size, for bricks only (what BrickGPT and the brick-only designs use). */
 export const PART_TO_SIZE: Record<string, string> = Object.fromEntries(
@@ -35,22 +64,38 @@ export const PART_TO_SIZE: Record<string, string> = Object.fromEntries(
 export const PLATE_TO_SIZE: Record<string, string> = Object.fromEntries(
 	Object.entries(PLATES).map(([s, p]) => [p, s])
 );
-/** Size and kind of any simple part we know (brick or plate). */
-export function partInfo(part: string): { size: string; plate: boolean } | null {
-	if (PART_TO_SIZE[part]) return { size: PART_TO_SIZE[part], plate: false };
-	if (PLATE_TO_SIZE[part]) return { size: PLATE_TO_SIZE[part], plate: true };
-	return null;
+export type PartKind = 'brick' | 'plate' | 's45' | 's33' | 'tile';
+const KINDS: [PartKind, Record<string, string>][] = [
+	['brick', LIBRARY], ['plate', PLATES], ['s45', SLOPES45], ['s33', SLOPES33], ['tile', TILES]
+];
+const PART_INDEX = new Map<string, { size: string; kind: PartKind }>();
+for (const [kind, table] of KINDS) for (const [size, part] of Object.entries(table)) PART_INDEX.set(part, { size, kind });
+/** Size and kind of any simple part we know. `plate` = a third of a brick high (plates and tiles). */
+export function partInfo(part: string): { size: string; plate: boolean; kind: PartKind } | null {
+	const i = PART_INDEX.get(part);
+	return i ? { ...i, plate: i.kind === 'plate' || i.kind === 'tile' } : null;
 }
+const KIND_LABEL: Record<PartKind, string> = { brick: 'Steen', plate: 'Plaat', s45: 'Dakpan 45°', s33: 'Dakpan 33°', tile: 'Tegel' };
 export function partLabel(part: string, fallback?: string): string {
 	const i = partInfo(part);
-	return i ? `${i.plate ? 'Plaat' : 'Steen'} ${i.size}` : fallback ?? part;
+	return i ? `${KIND_LABEL[i.kind]} ${i.size}` : fallback ?? part;
+}
+/** Key used for "which sizes do we own": '2x4' brick, 'p2x4' plate, 's452x2' slope, 't1x2' tile. */
+export function stockKey(part: string): string | null {
+	const i = partInfo(part);
+	if (!i) return null;
+	return ({ brick: '', plate: 'p', s45: 's45', s33: 's33', tile: 't' } as const)[i.kind] + i.size;
 }
 
 export function sizeOf(b: Brick): string {
 	return `${Math.min(b.h, b.w)}x${Math.max(b.h, b.w)}`;
 }
 export function partOf(b: Brick): string {
-	return b.p ? PLATES[sizeOf(b)] : LIBRARY[sizeOf(b)];
+	const size = sizeOf(b);
+	if (b.k === 's45') return SLOPES45[size];
+	if (b.k === 's33') return SLOPES33[size];
+	if (b.k === 't') return TILES[size];
+	return b.p ? PLATES[size] : LIBRARY[size];
 }
 
 export function parseBrick(s: string): Brick | null {

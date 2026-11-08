@@ -17,6 +17,7 @@ export const GET: RequestHandler = async () => {
 				...l,
 				size: info?.size ?? null,
 				plate: info?.plate ?? false,
+				kind: info?.kind ?? null,
 				name: info ? partLabel(l.part) : meta.get(l.part)?.name ?? l.part,
 				img: meta.get(l.part)?.img ?? null,
 				colorName: c?.name ?? `Kleur ${l.color}`,

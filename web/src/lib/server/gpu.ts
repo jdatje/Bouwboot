@@ -68,7 +68,7 @@ export async function* generate(
 const URL3D = () =>
 	(process.env.GPU_URL_3D || URL().replace('-designer-web', '-shaper-web')).replace(/\/$/, '');
 
-export type ShapeBrick = { h: number; w: number; x: number; y: number; z: number; c: number; p?: number };
+export type ShapeBrick = { h: number; w: number; x: number; y: number; z: number; c: number; p?: number; k?: 's45' | 's33' | 't'; d?: number };
 const URLTR = () =>
 	(process.env.GPU_URL_TRELLIS || URL().replace('-designer-web', '-trellis-web')).replace(/\/$/, '');
 
@@ -80,8 +80,13 @@ export async function shape(
 	signal?: AbortSignal,
 	maxBricks = 450,
 	engine: 'tripo' | 'trellis' = 'tripo',
-	plates = true
+	plates = true,
+	size: { studs: number; voxels: number; hollow: boolean } = { studs: 16, voxels: 2600, hollow: false }
 ): Promise<ShapeBrick[]> {
+	if (process.env.MOCK_SHAPE_FILE) {
+		const { readFileSync } = await import('node:fs');
+		return JSON.parse(readFileSync(process.env.MOCK_SHAPE_FILE, 'utf8'));
+	}
 	if (process.env.MOCK_GPU) {
 		const out: ShapeBrick[] = [];
 		for (let z = 0; z < 5; z++)
@@ -96,7 +101,10 @@ export async function shape(
 	const res = await fetch((engine === 'trellis' ? URLTR() : URL3D()) + '/shape', {
 		method: 'POST',
 		headers: { 'content-type': 'application/json', authorization: `Bearer ${gpuKey()}` },
-		body: JSON.stringify({ image: imageB64, palette, sizes, plates, max_bricks: Math.max(20, Math.floor(maxBricks)) }),
+		body: JSON.stringify({
+			image: imageB64, palette, sizes, plates, max_bricks: Math.max(20, Math.floor(maxBricks)),
+			max_studs: size.studs, max_voxels: size.voxels, hollow: size.hollow
+		}),
 		signal
 	});
 	if (!res.ok) throw new Error(`3D ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -109,6 +117,6 @@ export function warmUp() {
 	if (process.env.MOCK_GPU || Date.now() - lastWarm < 120_000) return;
 	lastWarm = Date.now();
 	const h = { authorization: `Bearer ${gpuKey()}` };
-	fetch(URL3D() + '/health', { headers: h }).catch(() => {});
+	// only the default engine (TRELLIS); waking TripoSR too would cost GPU time for nothing
 	fetch(URLTR() + '/health', { headers: h }).catch(() => {});
 }

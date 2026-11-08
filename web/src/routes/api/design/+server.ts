@@ -21,6 +21,13 @@ export const POST: RequestHandler = async ({ request }) => {
 	const onlyMine = !!body.onlyMine;
 	const variation = Number(body.variation ?? 0) || 0;
 	const engine: Engine = ['brickgpt', '3d', 'trellis'].includes(body.engine) ? body.engine : DEFAULT_ENGINE;
+	// Klein / Middel / Groot: length in studs, cell budget, hollow inside, piece budget
+	const SIZE = {
+		k: { studs: 16, voxels: 2600, hollow: false, pieces: 450 },
+		m: { studs: 24, voxels: 9000, hollow: true, pieces: 1500 },
+		g: { studs: 32, voxels: 20000, hollow: true, pieces: 3500 }
+	} as const;
+	const size = SIZE[(body.size as keyof typeof SIZE) in SIZE ? (body.size as keyof typeof SIZE) : 'm'];
 	const enc = new TextEncoder();
 	const abort = new AbortController();
 	request.signal.addEventListener('abort', () => abort.abort());
@@ -34,7 +41,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (!text) throw new Error('Typ eerst wat je wilt bouwen');
 				let allowed: string[] | null = null;
 				let palette: Color[] = PALETTE;
-				let maxBricks = 450;
+				let maxBricks: number = size.pieces;
 				const all = await allColors();
 				const col = (id: number) => PALETTE_BY_ID.get(id) ?? all.get(id);
 				if (onlyMine) {
@@ -43,7 +50,7 @@ export const POST: RequestHandler = async ({ request }) => {
 					if (!allowed.length) throw new Error('Er zijn nu geen losse stenen beschikbaar (2x4, 1x2, ...). Voeg sets of een scan toe, of haal een bouwwerk uit elkaar.');
 					const owned = new Set([...lib.values()].flatMap((m) => [...m.keys()]));
 					palette = [...owned].map(col).filter(Boolean) as Color[];
-					maxBricks = [...lib.values()].reduce((a, m) => a + [...m.values()].reduce((x, y) => x + y, 0), 0);
+					maxBricks = Math.min(size.pieces, [...lib.values()].reduce((a, m) => a + [...m.values()].reduce((x, y) => x + y, 0), 0));
 				}
 
 				let bricks: Brick[] = [];
@@ -61,24 +68,25 @@ export const POST: RequestHandler = async ({ request }) => {
 					let shaped: Awaited<ReturnType<typeof shape>> = [];
 					// a drawing sometimes doesn't turn into a usable 3D shape; then draw again once
 					for (let attempt = 0; attempt < 2 && shaped.length < 25; attempt++) {
-						const img = await drawToy(cap.subject || text, variation + attempt * 7);
+						const img = await drawToy(cap.subject || text, variation + attempt * 7, size.studs);
 						const small = await sharp(Buffer.from(img.data, 'base64')).resize(320, 320, { fit: 'inside' }).jpeg({ quality: 80 }).toBuffer();
 						sketch = 'data:image/jpeg;base64,' + small.toString('base64');
 						send({ type: 'sketch', image: sketch });
 						shaped = await shape(img.data, palette.map((c) => ({ id: c.id, hex: c.hex })), allowed, abort.signal, maxBricks,
-							engine === 'trellis' ? 'trellis' : 'tripo', true);
+							engine === 'trellis' ? 'trellis' : 'tripo', true, size);
 					}
 					if (shaped.length < 3) throw new Error('Van deze tekening kon ik geen bouwwerk maken. Probeer het nog eens.');
 					// stream the bricks layer by layer so the build animation still plays
 					const delay = Math.max(4, Math.min(25, 3000 / shaped.length));
 					for (const b of shaped) {
-						send({ type: 'brick', o: { h: b.h, w: b.w, x: b.x, y: b.y, z: b.z, ...(b.p ? { p: 1 } : {}) } });
+						const { c, ...shapeOnly } = b;
+						send({ type: 'brick', o: shapeOnly });
 						await new Promise((r) => setTimeout(r, delay));
 					}
 					bricks = shaped.map((b) => ({ ...b }));
 					send({ type: 'final', bricks: bricks.map(({ c, ...r }) => r) });
 				} else {
-					if (allowed) allowed = allowed.filter((a) => !a.startsWith('p')); // BrickGPT only knows bricks
+					if (allowed) allowed = allowed.filter((a) => /^\d+x\d+$/.test(a)); // BrickGPT only knows bricks
 					const cap = await toCaption(text, variation);
 					caption = cap.caption;
 					title = cap.title;

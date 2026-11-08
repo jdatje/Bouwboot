@@ -266,8 +266,9 @@ def parse_sizes(items):
     out = []
     for x in items:
         x = x.lower()
-        dims = tuple(sorted(map(int, x.lstrip("p").split("x"))))
-        out.append(("p", dims) if x.startswith("p") else dims)
+        kind = next((k for k in ("s45", "s33", "t", "p") if x.startswith(k)), "")
+        dims = tuple(sorted(map(int, x[len(kind):].split("x"))))
+        out.append((kind, dims) if kind else dims)
     return out
 
 
@@ -327,7 +328,7 @@ image_trellis = (
 )
 
 
-@app.cls(gpu=["L4", "A10G", "L40S"], image=image_trellis, scaledown_window=300, timeout=600, volumes={"/models": models_volume},
+@app.cls(gpu=["L4", "A10G", "L40S"], image=image_trellis, scaledown_window=120, timeout=600, volumes={"/models": models_volume},
          secrets=[modal.Secret.from_name("bouwboot-gpu"), modal.Secret.from_name("bouwboot-hf")])
 class Trellis:
     @modal.enter()
@@ -375,6 +376,9 @@ class Trellis:
             max_bricks: int = 450
             sizes: list[str] | None = None
             plates: bool = True
+            max_voxels: int = 2600
+            hollow: bool = False
+            slopes: bool = True
             seed: int = 1
             steps: int = 12
 
@@ -465,14 +469,16 @@ class Trellis:
                 occ, col = voxels(img, req.steps)
             t1 = time.time()
             sizes = parse_sizes(req.sizes)
-            studs = max(6, min(req.max_studs, 28))
+            studs = max(6, min(req.max_studs, 36))
+            mv = max(500, min(req.max_voxels, 30000))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=0, saturate=1.0)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates, brighten=0, saturate=1.0,
+                                         max_voxels=mv, hollow_inside=req.hollow, slopes=req.slopes)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
             stats = {"seconds": round(time.time() - t0, 1), "model_s": round(t1 - t0, 1), "bricks": len(bricks), "studs": studs,
-                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "color-3"}
+                     "timing": getattr(self, "last_timing", None), "gpu": torch.cuda.get_device_name(0), "v": "sizes-1"}
             print("trellis", stats, flush=True)
             try:
                 models_volume.commit()
@@ -483,7 +489,7 @@ class Trellis:
         return api
 
 
-@app.cls(gpu="T4", image=image3d, scaledown_window=300, timeout=300,
+@app.cls(gpu="T4", image=image3d, scaledown_window=120, timeout=300,
          secrets=[modal.Secret.from_name("bouwboot-gpu")])
 class Shaper:
     @modal.enter()
@@ -517,8 +523,11 @@ class Shaper:
             palette: list[dict]  # [{id, hex}]
             max_studs: int = 16
             max_bricks: int = 450  # the build is made smaller until it fits
-            sizes: list[str] | None = None  # e.g. ["2x4", "p1x2"]; None = all
+            sizes: list[str] | None = None  # e.g. ["2x4", "p1x2", "s452x2", "t1x2"]; None = all
             plates: bool = False
+            max_voxels: int = 2600
+            hollow: bool = False
+            slopes: bool = True
 
         def check(auth):
             if not auth or not hmac.compare_digest(auth, f"Bearer {key}"):
@@ -544,9 +553,11 @@ class Shaper:
             occ, col = sample_grid(self.model, codes[0])
             t1 = time.time()
             sizes = parse_sizes(req.sizes)
-            studs = max(6, min(req.max_studs, 28))
+            studs = max(6, min(req.max_studs, 36))
+            mv = max(500, min(req.max_voxels, 30000))
             while True:
-                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates)
+                bricks = shape_to_bricks(occ, col, req.palette, max_studs=studs, sizes=sizes, plates=req.plates,
+                                         max_voxels=mv, hollow_inside=req.hollow, slopes=req.slopes)
                 if len(bricks) <= req.max_bricks or studs <= 6:
                     break
                 studs -= 2
