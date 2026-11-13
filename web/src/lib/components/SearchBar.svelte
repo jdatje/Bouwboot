@@ -1,14 +1,14 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
+	import SizeSlider from '#lib/components/SizeSlider.svelte';
 	const warm = () => fetch('/api/warm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' }).catch(() => {});
 	onMount(warm);
-	let { value = '', onlyMine = false, big = false, autofocus = false, size = 'm' }: { value?: string; onlyMine?: boolean; big?: boolean; autofocus?: boolean; size?: string } = $props();
+	let { value = '', onlyMine = false, big = false, autofocus = false, pieces = 0 }: { value?: string; onlyMine?: boolean; big?: boolean; autofocus?: boolean; pieces?: number } = $props();
 	let q = $state(value);
 	let mine = $state(onlyMine);
-	let sz = $state(size);
-	$effect(() => { sz = size; });
-	const SIZES: [string, string][] = [['k', 'Klein'], ['m', 'Middel'], ['g', 'Groot']];
+	let n = $state(200);
+	$effect(() => { if (pieces) n = pieces; });
 	$effect(() => { q = value; });
 	$effect(() => { mine = onlyMine; });
 
@@ -16,7 +16,7 @@
 		e.preventDefault();
 		const t = q.trim();
 		if (!t) return;
-		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(t)}${mine ? '&mijn=1' : ''}&g=${sz}&t=${Date.now()}`);
+		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(t)}${mine ? '&mijn=1' : ''}&n=${n}&t=${Date.now()}`);
 	}
 </script>
 
@@ -28,11 +28,7 @@
 		<button class="primary" type="submit" disabled={!q.trim()}>Bouw</button>
 	</div>
 	<div class="opts">
-		<div class="size" role="radiogroup" aria-label="Grootte">
-			{#each SIZES as [id, label]}
-				<button type="button" role="radio" aria-checked={sz === id} class:on={sz === id} onclick={() => (sz = id)}>{label}</button>
-			{/each}
-		</div>
+		<div class="size"><SizeSlider bind:value={n} fixed={!!pieces} /></div>
 		<label class="mine">
 			<input type="checkbox" bind:checked={mine} />
 			<span>Alleen mijn stenen</span>
@@ -55,9 +51,7 @@
 	.big .bar { padding: 0.45rem 0.45rem 0.45rem 1.3rem; }
 	.big .bar input { font-size: 1.25rem; }
 	.opts { display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem 1.2rem; margin: 0.7rem 0 0 1rem; }
-	.size { display: inline-flex; background: #eef1f5; border-radius: 999px; padding: 0.15rem; }
-	.size button { background: none; padding: 0.3em 0.85em; border-radius: 999px; font-size: 0.88rem; color: #4a5260; }
-	.size button.on { background: white; color: #1d2330; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+	.size { flex: 1 1 260px; min-width: 0; max-width: 420px; }
 	.mine { display: inline-flex; align-items: center; gap: 0.45rem; color: #4a5260; font-size: 0.95rem; cursor: pointer; }
 	.mine input { width: 1.1rem; height: 1.1rem; accent-color: #d01012; }
 </style>

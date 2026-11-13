@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { piecesFromParams } from '#lib/size.ts';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
 	import { onMount, untrack } from 'svelte';
@@ -15,6 +16,7 @@
 			order_list: { part: string; color: number; qty: number; received: boolean }[] | null;
 		};
 		coverage: { have: number; total: number; missing: { part: string; color: number; qty: number }[] };
+		teardown?: string[];
 		colors: Record<string, { id: number; name: string; hex: string; bl: number }>;
 	};
 
@@ -95,7 +97,7 @@
 			const res = await fetch('/api/design', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined, size: page.url.searchParams.get('g') ?? 'm' }),
+				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined, pieces: piecesFromParams(page.url.searchParams), withAssembled: page.url.searchParams.get('ib') === '1' }),
 				signal: abort.signal
 			});
 			if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Je bent niet (meer) ingelogd.' : 'De server reageert niet.');
@@ -161,7 +163,7 @@
 	function reshape(other: string | false = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;
 		const m = other || engine;
-		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&g=${page.url.searchParams.get('g') ?? 'm'}&t=${Date.now()}`);
+		goto(`/bouwwerk/nieuw?q=${encodeURIComponent(q)}${mine ? '&mijn=1' : ''}&v=${v}&m=${m}&n=${piecesFromParams(page.url.searchParams)}${page.url.searchParams.get('ib') === '1' ? '&ib=1' : ''}&t=${Date.now()}`);
 	}
 
 	let recolorN = 1;
@@ -241,7 +243,7 @@
 
 <svelte:head><title>{info?.build.title ?? liveTitle ?? 'Bouwen'} · Bouwboot</title></svelte:head>
 
-<TopBar {q} onlyMine={mine} size={page.url.searchParams.get('g') ?? 'm'} />
+<TopBar {q} onlyMine={mine} pieces={page.url.searchParams.has('n') || page.url.searchParams.has('g') ? piecesFromParams(page.url.searchParams) : 0} />
 
 <main class:kid>
 	<section class="stage">
@@ -296,6 +298,9 @@
 					Je hebt alle {info.coverage.total} onderdelen al in huis!
 				{:else}
 					Je hebt al <b>{info.coverage.have}</b> van de {info.coverage.total} onderdelen.
+				{/if}
+				{#if info.teardown?.length}
+					<br />Haal eerst uit elkaar: <b>{info.teardown.join(', ')}</b>
 				{/if}
 			</p>
 			{#if info.build.saved}

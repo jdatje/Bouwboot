@@ -1,12 +1,12 @@
 <script lang="ts">
 	import Logo from './Logo.svelte';
 	import SearchBar from './SearchBar.svelte';
-	let { q = '', onlyMine = false, search = true, size = 'm' }: { q?: string; onlyMine?: boolean; search?: boolean; size?: string } = $props();
+	let { q = '', onlyMine = false, search = true, pieces = 0 }: { q?: string; onlyMine?: boolean; search?: boolean; pieces?: number } = $props();
 </script>
 
 <header>
 	<Logo size={0.62} />
-	{#if search}<div class="s"><SearchBar value={q} {onlyMine} {size} /></div>{/if}
+	{#if search}<div class="s"><SearchBar value={q} {onlyMine} {pieces} /></div>{/if}
 	<nav>
 		<a href="/bouwwerken">Opgeslagen</a>
 		<a href="/magazijn">Magazijn</a>

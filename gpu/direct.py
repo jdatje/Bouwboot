@@ -18,7 +18,7 @@ COLORS = [("white", 15, "#F4F4F4"), ("black", 0, "#1B2A34"), ("light_grey", 71, 
           ("brown", 70, "#582A12"), ("dark_brown", 308, "#352100")]
 PALETTE = [{"id": i, "hex": h} for _, i, h in COLORS]
 NAME = {n: k for k, (n, _, _) in enumerate(COLORS)}
-MAX = (48, 48, 120)  # studs, studs, plates
+MAX = (64, 64, 160)  # studs, studs, plates
 
 
 def _mask(p, X, Y, Z):

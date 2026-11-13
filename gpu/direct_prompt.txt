@@ -5,7 +5,8 @@ COORDINATES
 - x = length (left to right), y = depth (front to back), both in STUDS. z = height in PLATES, z=0 is the ground.
 - 1 brick = 3 plates high. 1 stud wide = 2.5 plates high. So something 4 studs wide and equally tall is 10 plates high.
   A door is about 2 studs wide and 15 plates high; one storey of a building is 15-18 plates.
-- The front of the model is the side y=0. The model must fit in about __STUDS__ studs for its longest side.
+- The front of the model is the side y=0. The longest side of the model is about __STUDS__ studs, and the finished model should use roughly
+  __PIECES__ LEGO pieces (small model = few big simple shapes; big model = more parts and finer details).
 
 PARTS (applied in order; a later part overwrites what is already there)
 - {"op":"box","x":0,"y":0,"z":0,"w":6,"d":4,"h":9,"color":"red"}   w along x, d along y (studs), h in plates.

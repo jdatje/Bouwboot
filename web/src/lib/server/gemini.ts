@@ -190,6 +190,12 @@ unsure or not a plain brick) and its colour as one of: ${names}.`
 
 function mock(parts: Part[]): unknown {
 	const text = parts.map((p) => ('text' in p ? p.text : '')).join('');
+	if (text.includes('Suggest 3 different things'))
+		return { ideas: [
+			{ title: 'Brandweerauto', prompt: 'Een rode brandweerauto met een grijze ladder', why: 'Je hebt veel rode en grijze stenen.' },
+			{ title: 'Krokodil', prompt: 'Een groene krokodil met witte tanden', why: 'Al dat groen is perfect voor een krokodil.' },
+			{ title: 'Vuurtoren', prompt: 'Een rood-witte vuurtoren op een rots', why: 'Rood en wit, net als een echte vuurtoren.' }
+		] };
 	if (text.includes('Request:')) return { caption: 'A simple test object.', title: 'Testbouwwerk', subject: 'a test object' };
 	if (text.includes('Bricks (index')) {
 		const n = (text.match(/^\d+: /gm) ?? []).length;

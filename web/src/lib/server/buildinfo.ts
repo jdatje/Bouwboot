@@ -1,5 +1,5 @@
 import { getBuild, type Build } from './db';
-import { coverage } from './inventory';
+import { coverage, teardown } from './inventory';
 import { colors } from './rebrickable';
 import { countParts, PALETTE_BY_ID } from '#lib/bricks.ts';
 
@@ -15,7 +15,7 @@ export async function buildInfo(id: string) {
 		[...ids].map((id) => [id, PALETTE_BY_ID.get(id) ?? all.get(id) ?? { id, name: `Kleur ${id}`, hex: '#999999', bl: 0 }])
 	);
 	const { thumb, ...rest } = b as Build & { thumb?: string };
-	return { build: rest as Build, coverage: cov, colors: colorInfo };
+	return { build: rest as Build, coverage: cov, colors: colorInfo, teardown: cov.missing.length ? teardown(b.bricks, b.id) : [] };
 }
 
 export function wantedListXml(lines: { part: string; color: number; qty: number }[], bl: (c: number) => number): string {

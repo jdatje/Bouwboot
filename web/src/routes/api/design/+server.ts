@@ -5,6 +5,7 @@ import { generate, shape } from '#lib/server/gpu.ts';
 import { designProgram, directAvailable, programToBricks } from '#lib/server/direct.ts';
 import { colorize, drawToy, toCaption } from '#lib/server/gemini.ts';
 import { availableLibrary, fitToStock } from '#lib/server/inventory.ts';
+import { piecesFromParams, sizeFor } from '#lib/size.ts';
 import { PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, parseBrick, type Brick, type Color } from '#lib/bricks.ts';
 import { colors as allColors } from '#lib/server/rebrickable.ts';
 
@@ -23,13 +24,9 @@ export const POST: RequestHandler = async ({ request }) => {
 	const onlyMine = !!body.onlyMine;
 	const variation = Number(body.variation ?? 0) || 0;
 	let engine: Engine = ['direct', 'brickgpt', '3d', 'trellis'].includes(body.engine) ? body.engine : DEFAULT_ENGINE;
-	// Klein / Middel / Groot: length in studs, cell budget, hollow inside, piece budget
-	const SIZE = {
-		k: { studs: 16, voxels: 2600, hollow: false, pieces: 450 },
-		m: { studs: 24, voxels: 9000, hollow: true, pieces: 1500 },
-		g: { studs: 32, voxels: 20000, hollow: true, pieces: 3500 }
-	} as const;
-	const size = SIZE[(body.size as keyof typeof SIZE) in SIZE ? (body.size as keyof typeof SIZE) : 'm'];
+	// slider value in pieces (old requests send size k/m/g)
+	const size = sizeFor(body.pieces ? Number(body.pieces) : piecesFromParams(new URLSearchParams({ g: String(body.size ?? '') })));
+	const withAssembled = !!body.withAssembled;
 	const enc = new TextEncoder();
 	const abort = new AbortController();
 	request.signal.addEventListener('abort', () => abort.abort());
@@ -47,7 +44,7 @@ export const POST: RequestHandler = async ({ request }) => {
 				const all = await allColors();
 				const col = (id: number) => PALETTE_BY_ID.get(id) ?? all.get(id);
 				if (onlyMine) {
-					const lib = availableLibrary();
+					const lib = availableLibrary(withAssembled);
 					allowed = [...lib.keys()];
 					if (!allowed.length) throw new Error('Er zijn nu geen losse stenen beschikbaar (2x4, 1x2, ...). Voeg sets of een scan toe, of haal een bouwwerk uit elkaar.');
 					const owned = new Set([...lib.values()].flatMap((m) => [...m.keys()]));
@@ -68,11 +65,11 @@ export const POST: RequestHandler = async ({ request }) => {
 				if (engine === 'direct') {
 					let shaped: Awaited<ReturnType<typeof programToBricks>> = [];
 					for (let attempt = 0; attempt < 2 && shaped.length < 10; attempt++) {
-						const prog = await designProgram(text, size.studs, variation + attempt * 7);
+						const prog = await designProgram(text, sizeFor(maxBricks).studs, maxBricks, variation + attempt * 7, onlyMine ? palette.map((c) => c.id) : undefined);
 						title = String(prog.title ?? text).slice(0, 60);
 						caption = String(prog.plan ?? '').slice(0, 500);
 						send({ type: 'caption', caption, title });
-						shaped = await programToBricks(prog, allowed);
+						shaped = await programToBricks(prog, allowed, maxBricks);
 					}
 					if (shaped.length < 3) throw new Error('Dit ontwerp lukte niet. Probeer het nog eens of omschrijf het anders.');
 					const delay = Math.max(4, Math.min(25, 3000 / shaped.length));
@@ -136,7 +133,7 @@ export const POST: RequestHandler = async ({ request }) => {
 						const w = col(wanted);
 						const opts = options.map(col).filter(Boolean) as Color[];
 						return w && opts.length ? nearestColor(hexToRgb(w.hex), opts).id : options[0];
-					});
+					}, withAssembled);
 				send({ type: 'colors', colors: bricks.map((b) => b.c) });
 
 				const id = newId();

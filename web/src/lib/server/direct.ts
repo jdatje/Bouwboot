@@ -8,9 +8,11 @@ import type { ShapeBrick } from '#lib/server/gpu.ts';
  *  no 3D model); gpu/direct.py turns that program into bricks, plates, slopes and tiles. */
 const GPU_DIR = () => process.env.BOUWBOOT_PY_DIR || path.resolve(process.cwd(), '..', 'gpu');
 const PY = () => process.env.PYTHON || 'python3';
-const COLORS = ['white', 'black', 'light_grey', 'dark_grey', 'red', 'dark_red', 'orange', 'light_orange', 'yellow', 'lime',
-	'bright_green', 'green', 'dark_green', 'olive', 'sand_green', 'azure', 'medium_blue', 'blue', 'dark_blue', 'light_pink',
-	'pink', 'tan', 'dark_tan', 'nougat', 'brown', 'dark_brown'];
+// same names and ids as gpu/direct.py
+export const COLOR_NAMES: [string, number][] = [['white', 15], ['black', 0], ['light_grey', 71], ['dark_grey', 72], ['red', 4],
+	['dark_red', 320], ['orange', 25], ['light_orange', 191], ['yellow', 14], ['lime', 27], ['bright_green', 10], ['green', 2],
+	['dark_green', 288], ['olive', 326], ['sand_green', 378], ['azure', 322], ['medium_blue', 73], ['blue', 1], ['dark_blue', 272],
+	['light_pink', 29], ['pink', 5], ['tan', 19], ['dark_tan', 28], ['nougat', 92], ['brown', 70], ['dark_brown', 308]];
 
 function run(args: string[], input: string, timeoutMs: number): Promise<string> {
 	return new Promise((resolve, reject) => {
@@ -35,10 +37,12 @@ export function directAvailable(): Promise<boolean> {
 
 export type Program = { title?: string; plan?: string; size?: { w: number; d: number }; parts: object[] };
 
-export async function designProgram(request: string, studs: number, variation: number): Promise<Program> {
+export async function designProgram(request: string, studs: number, pieces: number, variation: number, colorIds?: number[]): Promise<Program> {
 	if (process.env.MOCK_DIRECT_FILE) return JSON.parse(readFileSync(process.env.MOCK_DIRECT_FILE, 'utf8'));
+	let names = COLOR_NAMES.filter(([, id]) => !colorIds || colorIds.includes(id)).map(([n]) => n);
+	if (!names.length) names = COLOR_NAMES.map(([n]) => n);
 	const spec = readFileSync(path.join(GPU_DIR(), 'direct_prompt.txt'), 'utf8')
-		.replace('__STUDS__', String(studs)).replace('__COLORS__', COLORS.join(', '));
+		.replace('__STUDS__', String(studs)).replace('__PIECES__', String(pieces)).replace('__COLORS__', names.join(', '));
 	const prog = await gemini<Program>(
 		[{ text: spec + '\n\nDesign: ' + request + (variation > 0 ? `\n(Variation ${variation}: make a clearly different design than the obvious one.)` : '') }],
 		null, variation > 0 ? 1.0 : 0.7);
@@ -46,8 +50,8 @@ export async function designProgram(request: string, studs: number, variation: n
 	return prog;
 }
 
-export async function programToBricks(program: Program, sizes: string[] | null): Promise<ShapeBrick[]> {
-	const out = JSON.parse(await run(['direct_cli.py'], JSON.stringify({ program, sizes }), 60000));
+export async function programToBricks(program: Program, sizes: string[] | null, target?: number): Promise<ShapeBrick[]> {
+	const out = JSON.parse(await run(['direct_cli.py'], JSON.stringify({ program, sizes, target: target ?? null }), 60000));
 	if (out.error) throw new Error(out.error);
 	return out.bricks;
 }

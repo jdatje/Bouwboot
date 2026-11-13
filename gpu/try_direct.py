@@ -17,7 +17,7 @@ SPEC = open(os.path.join(os.path.dirname(__file__), "direct_prompt.txt")).read()
 
 
 def ask(subject, variation=0):
-    text = SPEC.replace("__STUDS__", str(STUDS)).replace("__COLORS__", ", ".join(n for n, _, _ in COLORS)) + f"\n\nDesign: {subject}" + (
+    text = SPEC.replace("__STUDS__", str(STUDS)).replace("__PIECES__", os.environ.get("PIECES", "300")).replace("__COLORS__", ", ".join(n for n, _, _ in COLORS)) + f"\n\nDesign: {subject}" + (
         f"\n(Variation {variation}: make a clearly different design.)" if variation else "")
     for attempt in range(3):
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
