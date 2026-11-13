@@ -28,10 +28,16 @@ function run(args: string[], input: string, timeoutMs: number): Promise<string> 
 }
 
 let available: Promise<boolean> | null = null;
-/** Is Python with numpy/scipy there (needed for the brick step)? Checked once. */
+let checkedAt = 0;
+/** Is Python with numpy/scipy there (needed for the brick step)? A "no" is checked again after a minute. */
 export function directAvailable(): Promise<boolean> {
 	if (process.env.MOCK_DIRECT_FILE) return Promise.resolve(true);
-	available ??= run(['-c', 'import numpy, scipy; import direct'], '', 20000).then(() => true, () => false);
+	if (!available || Date.now() - checkedAt > 60_000) {
+		checkedAt = Date.now();
+		const prev = available;
+		available = (prev ?? Promise.resolve(false)).then((ok) =>
+			ok ? true : run(['-c', 'import numpy, scipy; import direct'], '', 20000).then(() => true, () => false));
+	}
 	return available;
 }
 
