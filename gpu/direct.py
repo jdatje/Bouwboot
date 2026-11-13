@@ -97,7 +97,9 @@ def program_to_grid(prog):
     idx = np.argwhere(vox)
     lo, hi = idx.min(0), idx.max(0) + 1
     lo[2] = 0
-    return vox[lo[0]:hi[0], lo[1]:hi[1], :hi[2]], lab[lo[0]:hi[0], lo[1]:hi[1], :hi[2]]
+    # the site's camera looks at the high-y side: turn the model so its front (y=0) faces the viewer
+    return (np.ascontiguousarray(vox[lo[0]:hi[0], lo[1]:hi[1], :hi[2]][::-1, ::-1]),
+            np.ascontiguousarray(lab[lo[0]:hi[0], lo[1]:hi[1], :hi[2]][::-1, ::-1]))
 
 
 def program_to_bricks(prog, sizes=None, slopes=True, hollow_inside=True):
@@ -106,3 +108,16 @@ def program_to_bricks(prog, sizes=None, slopes=True, hollow_inside=True):
     if hollow_inside:
         vox = hollow(vox)
     return tile_plates(vox, lab, PALETTE, sizes, slopes)
+
+
+def parse_sizes(items):
+    """["2x4", "p1x2", "s452x2", "t1x2"] -> what the tiler expects; None = everything."""
+    if not items:
+        return None
+    out = []
+    for x in items:
+        x = x.lower()
+        kind = next((k for k in ("s45", "s33", "t", "p") if x.startswith(k)), "")
+        dims = tuple(sorted(map(int, x[len(kind):].split("x"))))
+        out.append((kind, dims) if kind else dims)
+    return out

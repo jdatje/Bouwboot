@@ -3,7 +3,7 @@
 set -euo pipefail
 
 apt-get update
-apt-get install -y curl git ca-certificates build-essential python3
+apt-get install -y curl git ca-certificates build-essential python3 python3-numpy python3-scipy
 if ! command -v node >/dev/null || [ "$(node -v | cut -c2- | cut -d. -f1)" -lt 22 ]; then
   curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
   apt-get install -y nodejs

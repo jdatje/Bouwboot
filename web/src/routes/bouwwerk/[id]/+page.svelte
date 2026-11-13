@@ -24,6 +24,7 @@
 	let message = $state('');
 	let liveTitle = $state('');
 	let sketch = $state<string | null>(null);
+	let liveEngine = $state('direct');
 	let liveCount = $state(0);
 	let kid = $state(false);
 	let step = $state(0);
@@ -113,6 +114,7 @@
 					const ev = JSON.parse(line.slice(6));
 					if (ev.type === 'caption') { liveTitle = ev.title; phase = 'building'; }
 					else if (ev.type === 'sketch') { sketch = ev.image; }
+					else if (ev.type === 'engine') { liveEngine = ev.engine; }
 					else if (ev.type === 'brick') {
 						const b: Brick | null = ev.o ?? parseBrick(ev.b);
 						if (b) { live.push(b); scene!.add(b); liveCount = live.length; }
@@ -154,8 +156,8 @@
 		}
 	}
 
-	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? 'trellis');
-	const ENGINES: [string, string][] = [['trellis', 'TRELLIS (nauwkeurig)'], ['3d', 'TripoSR (snel)'], ['brickgpt', 'BrickGPT']];
+	const engine = $derived(info?.build.engine ?? page.url.searchParams.get('m') ?? 'direct');
+	const ENGINES: [string, string][] = [['direct', 'Direct in stenen'], ['trellis', 'Via tekening (TRELLIS)']];
 	function reshape(other: string | false = false) {
 		const v = Number(page.url.searchParams.get('v') ?? 0) + 1;
 		const m = other || engine;
@@ -228,6 +230,7 @@
 
 	const statusText = $derived(
 		phase === 'thinking' ? 'Even nadenken over de vorm…'
+		: phase === 'building' && liveCount === 0 && liveEngine === 'direct' ? 'Ontwerpen… (20 tot 60 seconden)'
 		: phase === 'building' && liveCount === 0 && !sketch ? 'Tekenen…'
 		: phase === 'building' && liveCount === 0 ? 'Van tekening naar 3D-vorm… (10 tot 60 seconden)'
 		: phase === 'building' ? `Bouwen… ${liveCount} onderdelen`

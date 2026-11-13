@@ -2,25 +2,27 @@ import type { RequestHandler } from './$types';
 import sharp from 'sharp';
 import { db, newId } from '#lib/server/db.ts';
 import { generate, shape } from '#lib/server/gpu.ts';
+import { designProgram, directAvailable, programToBricks } from '#lib/server/direct.ts';
 import { colorize, drawToy, toCaption } from '#lib/server/gemini.ts';
 import { availableLibrary, fitToStock } from '#lib/server/inventory.ts';
 import { PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, parseBrick, type Brick, type Color } from '#lib/bricks.ts';
 import { colors as allColors } from '#lib/server/rebrickable.ts';
 
-type Engine = '3d' | 'trellis' | 'brickgpt';
-const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || 'trellis';
+type Engine = 'direct' | '3d' | 'trellis' | 'brickgpt';
+const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || 'direct';
 
 /**
  * Streams a new design as server-sent events:
  * caption → [sketch] → brick/rollback (live) → final → colors → saved, or error.
- * Two engines: '3d' (Gemini draws a toy → TripoSR 3D shape → bricks) and 'brickgpt' (text → bricks).
+ * Engines: 'direct' (Gemini writes a building program → bricks; default), 'trellis'/'3d' (Gemini draws →
+ * 3D shape → bricks) and 'brickgpt' (text → bricks).
  */
 export const POST: RequestHandler = async ({ request }) => {
 	const body = await request.json();
 	const text = String(body.prompt ?? '').trim().slice(0, 300);
 	const onlyMine = !!body.onlyMine;
 	const variation = Number(body.variation ?? 0) || 0;
-	const engine: Engine = ['brickgpt', '3d', 'trellis'].includes(body.engine) ? body.engine : DEFAULT_ENGINE;
+	let engine: Engine = ['direct', 'brickgpt', '3d', 'trellis'].includes(body.engine) ? body.engine : DEFAULT_ENGINE;
 	// Klein / Middel / Groot: length in studs, cell budget, hollow inside, piece budget
 	const SIZE = {
 		k: { studs: 16, voxels: 2600, hollow: false, pieces: 450 },
@@ -59,7 +61,29 @@ export const POST: RequestHandler = async ({ request }) => {
 				let sketch: string | null = null;
 				const seed = Math.floor(Math.random() * 1e9);
 
-				if (engine === '3d' || engine === 'trellis') {
+				// the brick step of 'direct' needs Python on this server; without it use the drawing route
+				if (engine === 'direct' && !(await directAvailable())) engine = 'trellis';
+				send({ type: 'engine', engine });
+
+				if (engine === 'direct') {
+					let shaped: Awaited<ReturnType<typeof programToBricks>> = [];
+					for (let attempt = 0; attempt < 2 && shaped.length < 10; attempt++) {
+						const prog = await designProgram(text, size.studs, variation + attempt * 7);
+						title = String(prog.title ?? text).slice(0, 60);
+						caption = String(prog.plan ?? '').slice(0, 500);
+						send({ type: 'caption', caption, title });
+						shaped = await programToBricks(prog, allowed);
+					}
+					if (shaped.length < 3) throw new Error('Dit ontwerp lukte niet. Probeer het nog eens of omschrijf het anders.');
+					const delay = Math.max(4, Math.min(25, 3000 / shaped.length));
+					for (const b of shaped) {
+						const { c, ...shapeOnly } = b;
+						send({ type: 'brick', o: shapeOnly });
+						await new Promise((r) => setTimeout(r, delay));
+					}
+					bricks = shaped.map((b) => ({ ...b }));
+					send({ type: 'final', bricks: bricks.map(({ c, ...r }) => r) });
+				} else if (engine === '3d' || engine === 'trellis') {
 					// translate first: the drawing model reads "boot" as an English shoe
 					const cap = await toCaption(text, 0);
 					caption = cap.caption;

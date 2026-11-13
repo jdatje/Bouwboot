@@ -4,35 +4,47 @@ const MODEL = () => process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
 type Part = { text: string } | { inline_data: { mime_type: string; data: string } };
 
-export async function gemini<T>(parts: Part[], schema: object, temperature = 0.7): Promise<T> {
+/** Text keys in the order to try them: an optional free-tier key first, then the paid one. */
+function keys(): string[] {
+	return [process.env.GEMINI_FREE_API_KEY, process.env.GEMINI_API_KEY].filter(Boolean) as string[];
+}
+
+export async function gemini<T>(parts: Part[], schema: object | null, temperature = 0.7): Promise<T> {
 	if (process.env.MOCK_GEMINI) return mock(parts) as T;
-	const key = process.env.GEMINI_API_KEY;
-	if (!key) throw new Error('GEMINI_API_KEY ontbreekt');
+	const ks = keys();
+	if (!ks.length) throw new Error('GEMINI_API_KEY ontbreekt');
 	let lastErr: unknown;
-	for (let attempt = 0; attempt < 3; attempt++) {
-		try {
-			const res = await fetch(
-				`https://generativelanguage.googleapis.com/v1beta/models/${MODEL()}:generateContent`,
-				{
-					method: 'POST',
-					headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-					body: JSON.stringify({
-						contents: [{ role: 'user', parts }],
-						generationConfig: {
-							temperature,
-							responseMimeType: 'application/json',
-							responseSchema: schema
-						}
-					})
+	for (const [ki, key] of ks.entries()) {
+		for (let attempt = 0; attempt < 3; attempt++) {
+			try {
+				const res = await fetch(
+					`https://generativelanguage.googleapis.com/v1beta/models/${MODEL()}:generateContent`,
+					{
+						method: 'POST',
+						headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+						body: JSON.stringify({
+							contents: [{ role: 'user', parts }],
+							generationConfig: {
+								temperature,
+								responseMimeType: 'application/json',
+								...(schema ? { responseSchema: schema } : {})
+							}
+						})
+					}
+				);
+				if (!res.ok) {
+					lastErr = new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
+					// free limit reached or key refused: move on to the next key straight away
+					if ([401, 403, 429].includes(res.status) && ki < ks.length - 1) break;
+					throw lastErr;
 				}
-			);
-			if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 300)}`);
-			const j = await res.json();
-			const text = j.candidates?.[0]?.content?.parts?.map((p: any) => p.text ?? '').join('') ?? '';
-			return JSON.parse(text) as T;
-		} catch (e) {
-			lastErr = e;
-			await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+				const j = await res.json();
+				const text = j.candidates?.[0]?.content?.parts?.map((p: any) => (p.thought ? '' : p.text ?? '')).join('') ?? '';
+				return JSON.parse(text) as T;
+			} catch (e) {
+				lastErr = e;
+				await new Promise((r) => setTimeout(r, 800 * (attempt + 1)));
+			}
 		}
 	}
 	throw lastErr;
