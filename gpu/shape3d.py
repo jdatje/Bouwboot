@@ -477,6 +477,36 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
+def tile_plates(vox, lab, palette, sizes=None, slopes=True):
+    """Plate-layer grid + palette labels -> bricks, plates, slopes and tiles (JSON-ready)."""
+    best = None
+    flips = (False, True) if vox.sum() < 15000 else (False,)
+    for flip in flips:
+        v = vox[::-1] if flip else vox
+        l = lab[::-1] if flip else lab
+        pieces, owner = brickify_plates(v, l, sizes, slopes)
+        kept = keep_grounded_pieces(pieces, owner)
+        if flip:
+            X = vox.shape[0]
+            fl = {0: 1, 1: 0, 2: 2, 3: 3}
+            kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") else d)
+                    for h, w, x, y, z, ht, c, k, d in kept]
+        if best is None or len(kept) > len(best):
+            best = kept
+    best.sort(key=lambda b: (b[4], -b[5], b[2], b[3]))
+    out = []
+    for h, w, x, y, z, ht, l, kind, di in best:
+        d = {"h": int(h), "w": int(w), "x": int(x), "y": int(y), "z": round(int(z) / 3, 4), "c": palette[int(l)]["id"]}
+        if ht == 1:
+            d["p"] = 1
+        if kind:
+            d["k"] = kind
+        if kind.startswith("s"):
+            d["d"] = int(di)
+        out.append(d)
+    return out
+
+
 def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, plates=False, brighten=7, saturate=1.15,
                     max_voxels=2600, hollow_inside=False, slopes=True, max_height=None):
     vox, vcol = to_voxels(occ, col, max_studs=max_studs, layer=PLATE if plates else LAYER,
@@ -500,32 +530,7 @@ def shape_to_bricks(occ, col, palette, max_studs=16, sizes=None, max_colors=5, p
     if plates:
         if hollow_inside:
             vox = hollow(vox)
-        best = None
-        flips = (False, True) if vox.sum() < 15000 else (False,)
-        for flip in flips:
-            v = vox[::-1] if flip else vox
-            l = lab[::-1] if flip else lab
-            pieces, owner = brickify_plates(v, l, sizes, slopes)
-            kept = keep_grounded_pieces(pieces, owner)
-            if flip:
-                X = vox.shape[0]
-                fl = {0: 1, 1: 0, 2: 2, 3: 3}
-                kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") else d)
-                        for h, w, x, y, z, ht, c, k, d in kept]
-            if best is None or len(kept) > len(best):
-                best = kept
-        best.sort(key=lambda b: (b[4], -b[5], b[2], b[3]))
-        out = []
-        for h, w, x, y, z, ht, l, kind, di in best:
-            d = {"h": int(h), "w": int(w), "x": int(x), "y": int(y), "z": round(int(z) / 3, 4), "c": palette[int(l)]["id"]}
-            if ht == 1:
-                d["p"] = 1
-            if kind:
-                d["k"] = kind
-            if kind.startswith("s"):
-                d["d"] = int(di)
-            out.append(d)
-        return out
+        return tile_plates(vox, lab, palette, sizes, slopes)
     # tile a few ways and keep the one where the most bricks hold on to the ground
     best = None
     for flip in (False, True):

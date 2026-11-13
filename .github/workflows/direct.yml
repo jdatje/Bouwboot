@@ -1,0 +1,37 @@
+name: direct
+on:
+  workflow_dispatch:
+    inputs:
+      subjects:
+        description: "JSON list of things to design"
+        required: false
+        default: '["fire station", "pirate ship"]'
+      studs:
+        description: "size in studs (16, 24, 32)"
+        required: false
+        default: "24"
+      model:
+        description: "Gemini text model"
+        required: false
+        default: "gemini-flash-latest"
+jobs:
+  direct:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install -q requests matplotlib numpy scipy
+      - name: Gemini writes building programs, turned straight into bricks
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SUBJECTS: ${{ github.event.inputs.subjects }}
+          STUDS: ${{ github.event.inputs.studs }}
+          GEMINI_TEXT_MODEL: ${{ github.event.inputs.model }}
+        run: python gpu/try_direct.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: direct
+          path: out/
