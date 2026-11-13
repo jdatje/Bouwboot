@@ -230,11 +230,29 @@
 		scene?.replay(Math.min(9000, 60 * (info?.build.bricks.length ?? 60)));
 	}
 
+	// funny messages while waiting; a new one every few seconds, in random order
+	const WAIT = [
+		'Even nadenken over de vorm…', 'Stenen tellen… 1, 2, 3… veel!', 'Op zoek naar dat ene rode steentje…',
+		'Au! Op een steen gestapt…', 'De bouwrobot drinkt even limonade…', 'Stenen sorteren op kleur…',
+		'Handleiding ondersteboven gehouden…', 'Even vragen aan de bouwkabouters…', 'Noppen poetsen…',
+		'Nog één steentje… nee, toch twee…', 'Even onder de bank kijken…', 'De doos is groter dan gedacht…',
+		'Plannetje tekenen op een servetje…', 'Wie heeft de 1x1 verstopt?', 'Bijna… de robot moest even niezen…',
+		'Stenen uit de stofzuiger halen…', 'Hmm, waar komt dit stukje?', 'Opwarmen met wat strekoefeningen…'
+	];
+	let waitIdx = $state(0);
+	const waiting = $derived(phase === 'thinking' || (phase === 'building' && liveCount === 0));
+	$effect(() => {
+		if (!waiting) return;
+		waitIdx = 0;
+		const order = [0, ...WAIT.slice(1).map((_, i) => i + 1).sort(() => Math.random() - 0.5)];
+		let k = 0;
+		const t = setInterval(() => { k = (k + 1) % order.length; waitIdx = order[k]; }, 3500);
+		return () => clearInterval(t);
+	});
+
 	const statusText = $derived(
-		phase === 'thinking' ? 'Even nadenken over de vorm…'
-		: phase === 'building' && liveCount === 0 && liveEngine === 'direct' ? 'Ontwerpen… (20 tot 60 seconden)'
-		: phase === 'building' && liveCount === 0 && !sketch ? 'Tekenen…'
-		: phase === 'building' && liveCount === 0 ? 'Van tekening naar 3D-vorm… (10 tot 60 seconden)'
+		phase === 'thinking' || (phase === 'building' && liveCount === 0 && liveEngine === 'direct') ? WAIT[waitIdx]
+		: phase === 'building' && liveCount === 0 ? WAIT[waitIdx]
 		: phase === 'building' ? `Bouwen… ${liveCount} onderdelen`
 		: phase === 'painting' ? 'Kleuren kiezen…'
 		: ''
