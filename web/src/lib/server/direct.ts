@@ -44,7 +44,10 @@ export function directAvailable(): Promise<boolean> {
 export type Program = { title?: string; plan?: string; size?: { w: number; d: number }; parts: object[] };
 
 export async function designProgram(request: string, studs: number, pieces: number, variation: number, colorIds?: number[]): Promise<Program> {
-	if (process.env.MOCK_DIRECT_FILE) return JSON.parse(readFileSync(process.env.MOCK_DIRECT_FILE, 'utf8'));
+	if (process.env.MOCK_DIRECT_FILE) {
+		await new Promise((r) => setTimeout(r, Number(process.env.MOCK_DIRECT_DELAY) || 0));
+		return JSON.parse(readFileSync(process.env.MOCK_DIRECT_FILE, 'utf8'));
+	}
 	let names = COLOR_NAMES.filter(([, id]) => !colorIds || colorIds.includes(id)).map(([n]) => n);
 	if (!names.length) names = COLOR_NAMES.map(([n]) => n);
 	const spec = readFileSync(path.join(GPU_DIR(), 'direct_prompt.txt'), 'utf8')

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import BrickCatch from '#lib/components/BrickCatch.svelte';
 	import { piecesFromParams } from '#lib/size.ts';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
@@ -87,58 +88,93 @@
 		const prompt = page.url.searchParams.get('q') ?? '';
 		const variation = Number(page.url.searchParams.get('v') ?? 0);
 		info = null; step = 0; tab = 'bouwen'; sketch = null;
-		phase = 'thinking'; message = ''; liveTitle = ''; liveCount = 0;
+		phase = 'thinking'; message = ''; liveTitle = ''; liveCount = 0; gameKey++;
 		scene!.clear();
 		scene!.centreOn([{ h: 1, w: 1, x: 9, y: 9, z: 0 }]);
 		scene!.refit();
 		scene!.setAutoRotate(true);
+		async function handle(ev: any) {
+			if (ev.type === 'caption') { liveTitle = ev.title; phase = 'building'; }
+			else if (ev.type === 'sketch') { sketch = ev.image; }
+			else if (ev.type === 'engine') { liveEngine = ev.engine; }
+			else if (ev.type === 'brick') {
+				const b: Brick | null = ev.o ?? parseBrick(ev.b);
+				if (b) { live.push(b); scene!.add(b); liveCount = live.length; }
+			} else if (ev.type === 'rollback') {
+				live.length = ev.keep; scene!.truncate(ev.keep); liveCount = live.length;
+			} else if (ev.type === 'final') {
+				phase = 'painting';
+			} else if (ev.type === 'colors') {
+				scene!.paint(ev.colors.map((c: number) => PALETTE_BY_ID.get(c)?.hex ?? '#999'));
+			} else if (ev.type === 'saved') {
+				const r = await fetch(`/api/builds/${ev.id}`);
+				info = await r.json();
+				phase = 'done';
+				scene!.setAutoRotate(false);
+				startedKey = `/bouwwerk/${ev.id}`;
+				replaceState(`/bouwwerk/${ev.id}`, {});
+			} else if (ev.type === 'error') {
+				throw Object.assign(new Error(ev.message), { fatal: true });
+			}
+		}
 		const live: Brick[] = [];
+		const request = { prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined, pieces: piecesFromParams(page.url.searchParams), withAssembled: page.url.searchParams.get('ib') === '1' };
+		// the design runs on the server; when the connection drops (phone switched apps) we reconnect
+		// and get everything from where we were
+		const jobKey = 'bouwboot.job.' + page.url.search;
+		let jobId: string | null = null;
+		try { jobId = sessionStorage.getItem(jobKey); } catch {}
+		let seen = 0;
 		try {
-			const res = await fetch('/api/design', {
-				method: 'POST',
-				headers: { 'content-type': 'application/json' },
-				body: JSON.stringify({ prompt, onlyMine: page.url.searchParams.get('mijn') === '1', variation, engine: page.url.searchParams.get('m') ?? undefined, pieces: piecesFromParams(page.url.searchParams), withAssembled: page.url.searchParams.get('ib') === '1' }),
-				signal: abort.signal
-			});
-			if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Je bent niet (meer) ingelogd.' : 'De server reageert niet.');
-			const reader = res.body.getReader();
-			const dec = new TextDecoder();
-			let buf = '';
-			for (;;) {
-				const { done, value } = await reader.read();
-				if (done) break;
-				buf += dec.decode(value, { stream: true });
-				let i;
-				while ((i = buf.indexOf('\n\n')) >= 0) {
-					const line = buf.slice(0, i);
-					buf = buf.slice(i + 2);
-					if (!line.startsWith('data: ')) continue;
-					const ev = JSON.parse(line.slice(6));
-					if (ev.type === 'caption') { liveTitle = ev.title; phase = 'building'; }
-					else if (ev.type === 'sketch') { sketch = ev.image; }
-					else if (ev.type === 'engine') { liveEngine = ev.engine; }
-					else if (ev.type === 'brick') {
-						const b: Brick | null = ev.o ?? parseBrick(ev.b);
-						if (b) { live.push(b); scene!.add(b); liveCount = live.length; }
-					} else if (ev.type === 'rollback') {
-						live.length = ev.keep; scene!.truncate(ev.keep); liveCount = live.length;
-					} else if (ev.type === 'final') {
-						phase = 'painting';
-					} else if (ev.type === 'colors') {
-						scene!.paint(ev.colors.map((c: number) => PALETTE_BY_ID.get(c)?.hex ?? '#999'));
-					} else if (ev.type === 'saved') {
-						const r = await fetch(`/api/builds/${ev.id}`);
-						info = await r.json();
-						phase = 'done';
-						scene!.setAutoRotate(false);
-						startedKey = `/bouwwerk/${ev.id}`;
-						replaceState(`/bouwwerk/${ev.id}`, {});
-					} else if (ev.type === 'error') {
-						throw new Error(ev.message);
+			for (let tries = 0; (phase as string) !== 'done' && tries < 30; tries++) {
+				if (tries > 0) {
+					while (document.visibilityState === 'hidden') await new Promise((r) => setTimeout(r, 500));
+					await new Promise((r) => setTimeout(r, Math.min(5000, 400 * tries)));
+					if (abort.signal.aborted) return;
+				}
+				let res: Response;
+				try {
+					res = await fetch('/api/design', {
+						method: 'POST',
+						headers: { 'content-type': 'application/json' },
+						body: JSON.stringify(jobId ? { job: jobId, from: seen } : request),
+						signal: abort.signal
+					});
+				} catch (e: any) {
+					if (e?.name === 'AbortError') throw e;
+					continue;
+				}
+				if (!res.ok || !res.body) throw new Error(res.status === 401 ? 'Je bent niet (meer) ingelogd.' : 'De server reageert niet.');
+				const reader = res.body.getReader();
+				const dec = new TextDecoder();
+				let buf = '';
+				try {
+					for (;;) {
+						const { done, value } = await reader.read();
+						if (done) break;
+						buf += dec.decode(value, { stream: true });
+						let i;
+						while ((i = buf.indexOf('\n\n')) >= 0) {
+							const line = buf.slice(0, i);
+							buf = buf.slice(i + 2);
+							if (!line.startsWith('data: ')) continue;
+							const ev = JSON.parse(line.slice(6));
+							if (ev.type === 'job') {
+								jobId = ev.id;
+								try { sessionStorage.setItem(jobKey, ev.id); } catch {}
+								continue;
+							}
+							if (ev.n) seen = ev.n;
+							await handle(ev);
+						}
 					}
+				} catch (e: any) {
+					if (e?.name === 'AbortError' || e?.fatal) throw e;
+					// connection lost: go round and reconnect
 				}
 			}
-			if (phase !== 'done') throw new Error('De verbinding werd onderbroken. Probeer het nog eens.');
+			try { sessionStorage.removeItem(jobKey); } catch {}
+			if ((phase as string) !== 'done') throw new Error('De verbinding werd onderbroken. Probeer het nog eens.');
 		} catch (e: any) {
 			if (e?.name === 'AbortError') return;
 			phase = 'error';
@@ -240,6 +276,7 @@
 		'Stenen uit de stofzuiger halen…', 'Hmm, waar komt dit stukje?', 'Opwarmen met wat strekoefeningen…'
 	];
 	let waitIdx = $state(0);
+	let gameKey = $state(0);
 	const waiting = $derived(phase === 'thinking' || (phase === 'building' && liveCount === 0));
 	$effect(() => {
 		if (!waiting) return;
@@ -267,6 +304,9 @@
 	<section class="stage">
 		<div class="view card">
 			<Viewer bind:scene />
+			{#if gameKey}
+				{#key gameKey}<BrickCatch active={waiting} />{/key}
+			{/if}
 			{#if phase !== 'done' && phase !== 'idle'}
 				<div class="status" class:err={phase === 'error'}>
 					{#if phase === 'error'}
@@ -438,7 +478,7 @@
 	main { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 1.2rem; padding: 0 1.2rem 2rem; max-width: 1400px; margin: 0 auto; }
 	.stage { min-width: 0; }
 	.view { position: relative; height: min(68vh, 680px); padding: 0; overflow: hidden; }
-	.status { position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); background: rgba(255,255,255,.92); padding: 0.6rem 1rem; border-radius: 999px; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
+	.status { z-index: 3; position: absolute; left: 50%; bottom: 1rem; transform: translateX(-50%); background: rgba(255,255,255,.92); padding: 0.6rem 1rem; border-radius: 999px; font-weight: 600; display: flex; align-items: center; gap: 0.6rem; box-shadow: 0 2px 10px rgba(0,0,0,.08); }
 	.status.err { border-radius: 16px; flex-direction: column; text-align: center; max-width: 90%; }
 	.status.err p { margin: 0; color: #a10c0e; }
 	.dot { width: 10px; height: 10px; border-radius: 50%; background: #ffcf00; animation: pulse 0.9s infinite alternate; }

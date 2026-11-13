@@ -1,6 +1,7 @@
 import type { RequestHandler } from './$types';
 import sharp from 'sharp';
 import { db, newId } from '#lib/server/db.ts';
+import { createJob, streamJob } from '#lib/server/jobs.ts';
 import { generate, shape } from '#lib/server/gpu.ts';
 import { designProgram, directAvailable, programToBricks } from '#lib/server/direct.ts';
 import { colorize, drawToy, toCaption } from '#lib/server/gemini.ts';
@@ -20,6 +21,12 @@ const DEFAULT_ENGINE: Engine = (process.env.DEFAULT_ENGINE as Engine) || 'direct
  */
 export const POST: RequestHandler = async ({ request }) => {
 	const body = await request.json();
+	// picking up a running (or finished) job after the connection dropped
+	if (body.job) {
+		return streamJob(String(body.job), Number(body.from) || 0) ??
+			new Response('data: ' + JSON.stringify({ type: 'error', message: 'Dit ontwerp is niet meer te vinden (de server is herstart). Probeer het nog eens.' }) + '\n\n',
+				{ headers: { 'content-type': 'text/event-stream' } });
+	}
 	const text = String(body.prompt ?? '').trim().slice(0, 300);
 	const onlyMine = !!body.onlyMine;
 	const variation = Number(body.variation ?? 0) || 0;
@@ -27,15 +34,13 @@ export const POST: RequestHandler = async ({ request }) => {
 	// slider value in pieces (old requests send size k/m/g)
 	const size = sizeFor(body.pieces ? Number(body.pieces) : piecesFromParams(new URLSearchParams({ g: String(body.size ?? '') })));
 	const withAssembled = !!body.withAssembled;
-	const enc = new TextEncoder();
+	// the job runs on, even when the browser goes away; it only stops when it takes far too long
 	const abort = new AbortController();
-	request.signal.addEventListener('abort', () => abort.abort());
+	const timer = setTimeout(() => abort.abort(), 10 * 60_000);
+	const jobId = newId();
+	const { send, finish } = createJob(jobId);
 
-	const stream = new ReadableStream({
-		async start(ctrl) {
-			const send = (o: object) => {
-				try { ctrl.enqueue(enc.encode('data: ' + JSON.stringify(o) + '\n\n')); } catch {}
-			};
+	(async () => {
 			try {
 				if (!text) throw new Error('Typ eerst wat je wilt bouwen');
 				let allowed: string[] | null = null;
@@ -146,15 +151,10 @@ export const POST: RequestHandler = async ({ request }) => {
 					let msg = e?.message ?? String(e);
 					if (/terminated|fetch failed|ECONNRESET|socket/i.test(msg)) msg = 'De verbinding met de bouwer viel weg. Probeer het nog eens.';
 					send({ type: 'error', message: msg });
-				}
+				} else send({ type: 'error', message: 'Het ontwerpen duurde te lang. Probeer het nog eens.' });
 			}
-			try { ctrl.close(); } catch {}
-		},
-		cancel() {
-			abort.abort();
-		}
-	});
-	return new Response(stream, {
-		headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache', 'x-accel-buffering': 'no' }
-	});
+			clearTimeout(timer);
+			finish();
+	})();
+	return streamJob(jobId, 0)!;
 };
