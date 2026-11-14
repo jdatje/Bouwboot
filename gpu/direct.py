@@ -263,6 +263,19 @@ def scale_program(prog, f):
             out.append({"op": "cylinder", "axis": "y", "x": round(cx * 2) / 2, "y": -0.5, "z": round(r * 2.5),
                         "r": max(0.5, round(r * 0.9)) / 2, "len": 1, "color": "light_grey", "mirror": True})
             continue
+        if op == "window" and f >= 1.5:
+            # one real window would be lost on a wall this much bigger: a block of real windows instead
+            sid = {"2x2": "window_2x2", "2x3": "window_2x3", "4x3": "window_4x3"}.get(str(q.get("size", "2x2")), "window_2x2")
+            ln, ht = SPECIALS[sid]["foot"][0], SPECIALS[sid]["foot"][2]
+            along_y = str(q.get("facing", "y")).endswith("x")
+            nx, nz = max(1, round(f)), max(1, round(f * 0.8))
+            x0, y0, z0 = round(float(q.get("x", 0)) * f), round(float(q.get("y", 0)) * f), round(float(q.get("z", 0)) * f)
+            for i in range(nx):
+                for j in range(nz):
+                    w = dict(q, z=z0 + j * ht)
+                    w["x"], w["y"] = (x0, y0 + i * ln) if along_y else (x0 + i * ln, y0)
+                    out.append(w)
+            continue
         if op in SPECIAL_OPS:
             for k in ("x", "y"):
                 if k in q:
