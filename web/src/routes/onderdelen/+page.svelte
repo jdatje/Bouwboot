@@ -3,11 +3,11 @@
 	import TopBar from '#lib/components/TopBar.svelte';
 	import PartIcon from '#lib/components/PartIcon.svelte';
 
-	type Item = { part: string; name: string; cat: string; qty: number; sets: number; taught: boolean; requested: number };
+	type Item = { part: string; name: string; cat: string; qty: number; sets: number; taught: boolean; requested: number; parked?: string };
 	let data = $state<any>(null);
 	let items = $state<Item[]>([]);
 	let q = $state('');
-	let filter = $state<'all' | 'taught' | 'todo'>('all');
+	let filter = $state<'all' | 'taught' | 'todo' | 'parked' | 'requested'>('todo');
 	let page = 0;
 	let loading = $state(false);
 	let timer: ReturnType<typeof setTimeout>;
@@ -23,9 +23,9 @@
 	}
 	onMount(() => load());
 	function search() { clearTimeout(timer); timer = setTimeout(() => load(), 300); }
-	async function ask(it: Item) {
-		await fetch('/api/parts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ part: it.part }) });
-		it.requested++;
+	async function ask(it: Item, undo = false) {
+		await fetch('/api/parts', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ part: it.part, undo }) });
+		it.requested = undo ? 0 : it.requested + 1;
 	}
 	const pct = (x: number) => (x * 100).toLocaleString('nl-NL', { maximumFractionDigits: 1 }) + '%';
 </script>
@@ -39,27 +39,32 @@
 	{:else if data}
 		<div class="stats">
 			<div><b>{data.taughtParts.toLocaleString('nl-NL')}</b><span>van {data.totalParts.toLocaleString('nl-NL')} onderdelen kan de ontwerper gebruiken</span></div>
-			<div><b>{pct(data.coverage)}</b><span>van alle stenen in officiële sets zijn zulke onderdelen</span></div>
+			<div><b>{pct(data.coverage)}</b><span>van alle stenen in officiële sets zijn zulke onderdelen ({pct(data.coverageFit)} zonder Technic, Duplo en andere aparte onderdelen)</span></div>
 		</div>
 		<div class="bar"><i style:width="{(data.coverage * 100).toFixed(1)}%"></i></div>
 
 		<div class="tools">
 			<input type="search" placeholder="Zoek op naam of nummer" bind:value={q} oninput={search} />
 			<div class="seg">
-				{#each [['all', 'Alles'], ['taught', 'Geleerd'], ['todo', 'Nog niet']] as [id, label]}
+				{#each [['todo', 'Te leren'], ['taught', 'Geleerd'], ['requested', 'Aangevraagd'], ['parked', 'Apart'], ['all', 'Alles']] as [id, label]}
 					<button class:on={filter === id} onclick={() => { filter = id as any; load(); }}>{label}</button>
 				{/each}
 			</div>
 		</div>
-		<p class="muted small">Gesorteerd op hoe vaak een onderdeel in officiële sets zit. Tik op "Vraag aan" voor onderdelen die de ontwerper moet leren.</p>
+		{#if filter === 'parked'}
+			<p class="muted small">Onderdelen die niet goed bij het bouwen van Bouwboot passen (Technic, Duplo, minifiguren, bedrukte stukken en meer, {data.parkedCount.toLocaleString('nl-NL')} in totaal). Die komen nooit vanzelf in een leerronde: alleen als je ze hier speciaal aanvraagt.</p>
+		{:else}
+			<p class="muted small">Gesorteerd op hoe vaak een onderdeel in officiële sets zit. "Te leren" is de volgorde voor de volgende leerrondes; tik op "Vraag aan" om een onderdeel voorrang te geven.</p>
+		{/if}
 
 		<ul>
 			{#each items as it (it.part)}
 				<li class:taught={it.taught}>
 					<span class="icon"><PartIcon part={it.part} hex="#A0A5A9" px={9} /></span>
-					<span class="name"><b>{it.name}</b><small>{it.part} · {it.cat} · {it.qty.toLocaleString('nl-NL')}× in {it.sets.toLocaleString('nl-NL')} sets</small></span>
+					<span class="name"><b>{it.name}</b><small>{it.part} · {it.parked ? 'Apart: ' + it.parked : it.cat} · {it.qty.toLocaleString('nl-NL')}× in {it.sets.toLocaleString('nl-NL')} sets</small></span>
 					{#if it.taught}<span class="badge ok">Geleerd</span>
-					{:else if it.requested}<span class="badge req">Aangevraagd</span>
+					{:else if it.requested}<button class="badge req" title="Aanvraag intrekken" onclick={() => ask(it, true)}>Aangevraagd ✕</button>
+					{:else if it.parked}<button class="ask special" title="Apart: {it.parked}" onclick={() => ask(it)}>Speciaal aanvragen</button>
 					{:else}<button class="ask" onclick={() => ask(it)}>Vraag aan</button>{/if}
 				</li>
 			{/each}
@@ -99,6 +104,10 @@
 	.badge.ok { background: #e3f5e5; color: #237841; }
 	.badge.req { background: #fff6cc; color: #8a6d00; }
 	.ask { font-size: 0.8rem; padding: 0.3em 0.8em; flex: none; }
+	.ask.special { background: #eef1f5; color: #4a5260; }
+	button.badge { border: none; cursor: pointer; }
+	.seg { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+	.seg button { white-space: nowrap; }
 	.more { margin: 1rem auto 0; display: block; }
 	@media (max-width: 520px) { .stats { grid-template-columns: 1fr; } }
 </style>

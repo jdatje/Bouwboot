@@ -11,10 +11,27 @@ import SPECIALS from '#lib/specials.json';
 import { db } from '#lib/server/db.ts';
 
 const DIR = () => path.join(process.env.DATA_DIR || 'data', 'rebrickable');
-const OUT = () => path.join(process.env.DATA_DIR || 'data', 'catalogue.v1.json');
+const OUT = () => path.join(process.env.DATA_DIR || 'data', 'catalogue.v2.json');
 const SKIP_CATEGORIES = new Set(['Stickers', 'Non-LEGO']);
 
-export type CatPart = { part: string; name: string; cat: string; qty: number; sets: number; taught: boolean };
+export type CatPart = { part: string; name: string; cat: string; qty: number; sets: number; taught: boolean; parked?: string };
+
+/**
+ * Parts that don't fit Bouwboot's studs-on-top building are kept apart ("Apart"): they never go into the
+ * normal to-do list or a "teach the next N" batch, only on a special request. Value = reason shown.
+ */
+const PARK_CATEGORIES: [RegExp, string][] = [
+	[/^Technic/, 'Technic'], [/^Duplo|Quatro|Primo/i, 'Duplo'], [/^Minifig|^Minidoll/, 'Minifiguren'],
+	[/^Belville|^Znap|^Clikits|^Modulex|^HO Scale|^Large Buildable|^Non-Buildable/, 'Andere bouwsystemen'],
+	[/^Pneumatics|^Electronics|^Mechanical|^Gear Parts|^Magnets/, 'Techniek en elektronica'],
+	[/^String|^Tubes and Hoses|^Projectiles|^Energy Effects|^Tools/, 'Overig'],
+	[/^Animals|^Rock/, 'Figuren en vormstukken']
+];
+function parkReason(part: string, name: string, cat: string): string | undefined {
+	for (const [re, why] of PARK_CATEGORIES) if (re.test(cat)) return why;
+	if (/pr\d|pat\d|pb\d/.test(part) || /\bwith .*(Print|Pattern)\b/i.test(name)) return 'Bedrukt';
+	return undefined;
+}
 type Catalogue = { parts: CatPart[]; total: number; taughtQty: number; built: number; rel?: Record<string, string[]> };
 
 /** Parts the designer can place (its own brick/plate/slope/tile list + the special pieces). */
@@ -128,7 +145,7 @@ async function build(): Promise<Catalogue | null> {
 		if (SKIP_CATEGORIES.has(n.cat)) continue;
 		const q = qty.get(part) ?? 0;
 		total += q;
-		parts.push({ part, name: n.name, cat: n.cat, qty: q, sets: sets.get(part)?.size ?? 0, taught: false });
+		parts.push({ part, name: n.name, cat: n.cat, qty: q, sets: sets.get(part)?.size ?? 0, taught: false, parked: parkReason(part, n.name, n.cat) });
 	}
 	parts.sort((a, b) => b.qty - a.qty);
 	const c: Catalogue = { parts, total, taughtQty: 0, built: Date.now(), rel: Object.fromEntries(relCache) };
@@ -140,6 +157,11 @@ async function build(): Promise<Catalogue | null> {
 export function requestPart(part: string) {
 	db.exec('CREATE TABLE IF NOT EXISTS part_requests (part TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 1, at INTEGER NOT NULL)');
 	db.prepare('INSERT INTO part_requests (part, n, at) VALUES (?, 1, ?) ON CONFLICT(part) DO UPDATE SET n = n + 1, at = excluded.at').run(part, Date.now());
+}
+/** A request taken back. */
+export function unrequestPart(part: string) {
+	db.exec('CREATE TABLE IF NOT EXISTS part_requests (part TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 1, at INTEGER NOT NULL)');
+	db.prepare('DELETE FROM part_requests WHERE part = ?').run(part);
 }
 export function requestedParts(): Map<string, number> {
 	db.exec('CREATE TABLE IF NOT EXISTS part_requests (part TEXT PRIMARY KEY, n INTEGER NOT NULL DEFAULT 1, at INTEGER NOT NULL)');
