@@ -62,6 +62,17 @@ def _mask(p, X, Y, Z):
     raise ValueError(f"unknown op {op}")
 
 
+WHEELS = [("wheels_s", 5.5), ("wheels_l", 7.5), ("wheels_b", 10.5), ("wheels_h", 99)]  # (piece, up to vehicle width)
+
+
+def wheel_for(width, asked="auto"):
+    """The real wheel set that fits a vehicle this wide (a bigger one than asked when the body would hide it)."""
+    asked = {"small": "wheels_s", "large": "wheels_l", "big": "wheels_b", "huge": "wheels_h"}.get(asked.lower(), "")
+    fit = next(sid for sid, upto in WHEELS if width <= upto)
+    order = [w for w, _ in WHEELS]
+    return max(asked, fit, key=order.index) if asked in order else fit
+
+
 def _specials_of(p, D):
     """Program part -> special pieces [(id, x, y, z, h, w, ht, d)] in stud/plate cells (or [] if not special)."""
     op = p.get("op", "box")
@@ -71,9 +82,7 @@ def _specials_of(p, D):
         ht = SPECIALS[sid]["foot"][2]
         out.append((sid, int(round(x if xx is None else xx)), int(round(y if yy is None else yy)), z if zz is None else zz, h, w, ht, d))
     if op == "wheels":
-        sid = "wheels_l" if str(p.get("size", "small")).startswith("l") else "wheels_s"
-        if sid == "wheels_s" and D > 5.5:  # small wheels would vanish under a wide body
-            sid = "wheels_l"
+        sid = wheel_for(D, str(p.get("size", "auto")))
         h, w, _ = SPECIALS[sid]["foot"]
         yy = p["y"] if "y" in p and p.get("y") is not None and "y_given" in p else D / 2 - w / 2
         put(sid, h, w, 0, yy=yy, zz=int(round(float(p.get("z", 0)))))
@@ -186,6 +195,24 @@ def program_to_grid(prog, with_specials=False):
     for sid, x0, y0, z0, h, w, ht, d, colour in specials:
         vox[x0:x0 + h, y0:y0 + w, z0:z0 + ht] = True
         lab[x0:x0 + h, y0:y0 + w, z0:z0 + ht] = colour
+    # a wheel set lower than the chassis above it gets a block in between (holder up to the body),
+    # otherwise the body would hang loose and be propped up all the way to the ground
+    for sid, x0, y0, z0, h, w, ht, d, colour in specials:
+        if not sid.startswith("wheels"):
+            continue
+        cy = y0 + w // 2
+        ys = slice(max(0, cy - 2), min(Y, cy + 2))
+        top = z0 + ht
+        col = vox[x0:x0 + h, ys, top:]
+        if not col.any():
+            continue
+        first = int(np.argmax(col.reshape(-1, col.shape[-1]).any(0)))  # first layer above with something in it
+        if 0 < first <= 30:
+            above = lab[x0:x0 + h, ys, top + first]
+            vals, counts = np.unique(above[vox[x0:x0 + h, ys, top + first]], return_counts=True)
+            c = int(vals[np.argmax(counts)]) if len(vals) else colour
+            vox[x0:x0 + h, ys, top:top + first] = True
+            lab[x0:x0 + h, ys, top:top + first] = c
     # trim empty space
     idx = np.argwhere(vox)
     lo, hi = idx.min(0), idx.max(0) + 1
@@ -253,6 +280,13 @@ def scale_program(prog, f):
             continue
         q = dict(p)
         op = q.get("op", "box")
+        if op == "wheels" and float((prog.get("size") or {}).get("d", 6)) * f <= 18:
+            # the scaled vehicle still fits a real wheel set: let the width pick it
+            q["x"] = round(float(q.get("x", 0)) * f)
+            q["z"] = round(float(q.get("z", 0)) * f)
+            q["size"] = "auto"
+            out.append(q)
+            continue
         if op == "wheels" and f >= 1.8:
             # real LEGO wheels would look tiny on a model this much bigger: build them from bricks instead
             big = str(q.get("size", "small")).startswith("l")
@@ -281,8 +315,6 @@ def scale_program(prog, f):
                 if k in q:
                     q[k] = round(float(q[k]) * f)
             q["z"] = round(float(q.get("z", 0)) * f)
-            if op == "wheels" and f >= 1.4:
-                q["size"] = "large"
         elif op == "cylinder":
             for k in ("x", "y", "r", "len"):
                 if k in q:

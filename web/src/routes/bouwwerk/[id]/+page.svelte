@@ -338,6 +338,7 @@
 			<h1>{info?.build.title ?? liveTitle ?? ''}</h1>
 			{#if info}
 				<p class="muted small">{info.build.bricks.length} onderdelen · “{info.build.prompt}”</p>
+				{#if info.build.caption?.startsWith('📏')}<p class="muted small sizenote">{info.build.caption}</p>{/if}
 			{/if}
 		</div>
 		{#if info}

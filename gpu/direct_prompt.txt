@@ -5,8 +5,8 @@ COORDINATES
 - x = length (left to right), y = depth (front to back), both in STUDS. z = height in PLATES, z=0 is the ground.
 - 1 brick = 3 plates high. 1 stud wide = 2.5 plates high. So something 4 studs wide and equally tall is 10 plates high.
   A door is about 2 studs wide and 15 plates high; one storey of a building is 15-18 plates.
-- The front of the model is the side y=0. The longest side of the model is about __STUDS__ studs, and the finished model should use roughly
-  __PIECES__ LEGO pieces (small model = few big simple shapes; big model = more parts and finer details).
+- The front of the model is the side y=0. The person would like about __PIECES__ LEGO pieces (small model = few big simple shapes; big model = more
+  parts and finer details) - see "pieces" below for when to choose fewer.
 
 PARTS (applied in order; a later part overwrites what is already there)
 - {"op":"box","x":0,"y":0,"z":0,"w":6,"d":4,"h":9,"color":"red"}   w along x, d along y (studs), h in plates.
@@ -19,10 +19,11 @@ PARTS (applied in order; a later part overwrites what is already there)
   cannons): x = centre, z = centre height in plates, y = where it starts, len = length in studs. axis "x" likewise.
 
 SPECIAL LEGO PIECES (real LEGO parts: use them, they make the model look much better)
-- {"op":"wheels","x":2,"size":"small"}   a pair of wheels on an axle holder, centred under the vehicle. x = where the
-  2-stud-long holder starts. small: the holder + wheels are 3 plates high, so the body/chassis starts at z=3; the
-  vehicle body must be exactly 4 studs wide (so the wheels show at the sides). "size":"large": 5 plates high (body starts at z=5), for trucks, body 6-8 wide.
-  Cars need 2 (front and back), long trucks 3. Wheels are always on the ground (z=0).
+- {"op":"wheels","x":2}   a pair of real LEGO wheels on their holder, centred under the vehicle, on the ground.
+  x = where the holder starts (front to back). The wheel size is chosen from the vehicle's width (size.d):
+  4-5 wide: small (body starts at z=3), 6-7 wide: large (body starts at z=5), 8-10 wide: truck wheels (body starts
+  at z=6, 4 studs long), 11+ wide: huge off-road wheels (body starts at z=10, 8 studs long).
+  Cars need 2 (front and back), long trucks 3, a trailer 1-2.
 - {"op":"window","x":4,"y":0,"z":4,"size":"2x2","color":"white"}   window frame with glass, set INTO a wall that is
   1 stud thick at that spot. size "2x2" (2 studs wide, 6 plates high), "2x3" (2 wide, 9 high), "4x3" (4 wide, 9 high).
   The wall runs along x by default; add "facing":"x" for a wall that runs along y. Car windscreens/side windows too.
@@ -68,6 +69,10 @@ The request is usually Dutch. Dutch words that look English keep their Dutch mea
 
 Answer with JSON only:
 {"title": "short Dutch name for the build, 1-4 words, capitalised",
+ "pieces": <the number of LEGO pieces that suits THIS subject best, at most __PIECES__. The person's number is a
+   wish, not a rule: if the subject looks better smaller (a car or a cat rarely needs more than 600-900 pieces, a
+   truck 1000-1500, a castle or a city block can use thousands), give a lower number and design for that size>,
+ "size_note": "only when you chose fewer pieces than asked: one short, friendly Dutch sentence why (for a child's parent), else empty",
  "plan": "2-4 sentences: the main volumes, their sizes in studs/plates, and where the details go",
   "size": {"w": <total length x>, "d": <total depth y>},
   "parts": [ ... ]}

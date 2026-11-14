@@ -64,7 +64,11 @@ else:
 for i, (s, prog, use, secs) in enumerate(jobs):
     json.dump(prog, open(f"out/direct{i}.json", "w"), indent=1)
     try:
-        t = time.time(); bricks = program_to_target(prog, int(os.environ.get('PIECES', '300')))
+        want = int(os.environ.get('PIECES', '300'))
+        best = prog.get('pieces')
+        target = int(best) if isinstance(best, (int, float)) and 60 <= best < want * 0.85 else want
+        print(f"   pieces asked {want}, Gemini chose {best}: {prog.get('size_note')!r} -> target {target}", flush=True)
+        t = time.time(); bricks = program_to_target(prog, target)
         kinds = collections.Counter(b.get("k", "p" if b.get("p") else "b") for b in bricks)
         print(f"[{s}] {len(prog['parts'])} parts -> {len(bricks)} pieces {dict(kinds)}, gemini {secs:.1f}s, bricks {time.time()-t:.1f}s, "
               f"tokens {use.get('promptTokenCount')}/{use.get('candidatesTokenCount')}/{use.get('thoughtsTokenCount')}", flush=True)

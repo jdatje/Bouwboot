@@ -48,7 +48,7 @@ const partsFor = (pieces: number) => {
 	return `${Math.round(n * 0.8)}-${n}`;
 };
 
-export type Program = { title?: string; plan?: string; size?: { w: number; d: number }; parts: object[] };
+export type Program = { title?: string; plan?: string; pieces?: number; size_note?: string; size?: { w: number; d: number }; parts: object[] };
 
 export async function designProgram(request: string, studs: number, pieces: number, variation: number, colorIds?: number[]): Promise<Program> {
 	if (process.env.MOCK_DIRECT_FILE) {

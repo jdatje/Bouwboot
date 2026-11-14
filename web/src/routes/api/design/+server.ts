@@ -73,8 +73,16 @@ export const POST: RequestHandler = async ({ request }) => {
 						const prog = await designProgram(text, sizeFor(maxBricks).studs, maxBricks, variation + attempt * 7, onlyMine ? palette.map((c) => c.id) : undefined);
 						title = String(prog.title ?? text).slice(0, 60);
 						caption = String(prog.plan ?? '').slice(0, 500);
+						// the slider is a wish: Gemini may choose fewer pieces when the subject suits that better
+						let target = maxBricks;
+						const best = Number(prog.pieces);
+						if (best >= 60 && best < maxBricks * 0.85) {
+							target = Math.round(best);
+							const note = String(prog.size_note ?? '').trim();
+							caption = '📏 ' + (note || `Kleiner gemaakt: ongeveer ${target} onderdelen past beter bij dit bouwwerk.`);
+						}
 						send({ type: 'caption', caption, title });
-						shaped = await programToBricks(prog, allowed, maxBricks);
+						shaped = await programToBricks(prog, allowed, target);
 					}
 					if (shaped.length < 3) throw new Error('Dit ontwerp lukte niet. Probeer het nog eens of omschrijf het anders.');
 					const delay = Math.max(4, Math.min(25, 3000 / shaped.length));
