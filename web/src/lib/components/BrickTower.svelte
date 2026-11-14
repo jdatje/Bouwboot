@@ -13,16 +13,20 @@
 	let restart: () => void = () => {};
 
 	onMount(() => {
+		// keep our own reference: the canvas element is removed from the page when the game ends
+		const el = canvas;
+		if (!el) return;
 		try { best = Number(localStorage.getItem('bouwboot.toren.best')) || 0; } catch {}
-		const ctx = canvas.getContext('2d')!;
+		const ctx = el.getContext('2d')!;
+		let alive = true;
 		let W = 0, H = 0, dpr = 1;
 		const resize = () => {
 			dpr = window.devicePixelRatio || 1;
-			W = canvas.clientWidth; H = canvas.clientHeight;
-			canvas.width = W * dpr; canvas.height = H * dpr;
+			W = el.clientWidth; H = el.clientHeight;
+			el.width = W * dpr; el.height = H * dpr;
 		};
 		resize();
-		const ro = new ResizeObserver(resize); ro.observe(canvas);
+		const ro = new ResizeObserver(() => { if (el.isConnected) resize(); }); ro.observe(el);
 
 		type Block = { x: number; w: number; c: string };
 		type Fall = { x: number; y: number; w: number; c: string; vy: number; rot: number };
@@ -88,7 +92,7 @@
 				ctx.fillText(flashText, W / 2, yOf(stack.length) - 14);
 				ctx.globalAlpha = 1;
 			}
-			raf = requestAnimationFrame(frame);
+			if (alive && el.isConnected) raf = requestAnimationFrame(frame);
 		}
 
 		function drop(e: PointerEvent) {
@@ -117,8 +121,8 @@
 		const base0 = () => H - 30;
 		reset();
 		raf = requestAnimationFrame(frame);
-		canvas.addEventListener('pointerdown', drop);
-		return () => { cancelAnimationFrame(raf); ro.disconnect(); canvas.removeEventListener('pointerdown', drop); };
+		el.addEventListener('pointerdown', drop);
+		return () => { alive = false; cancelAnimationFrame(raf); ro.disconnect(); el.removeEventListener('pointerdown', drop); };
 	});
 
 	$effect(() => {

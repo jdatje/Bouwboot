@@ -14,16 +14,20 @@
 	let finalScore = $state<number | null>(null);
 
 	onMount(() => {
+		// keep our own reference: the canvas element is removed from the page when the game ends
+		const el = canvas;
+		if (!el) return;
 		try { best = Number(localStorage.getItem('bouwboot.vang.best')) || 0; } catch {}
-		const ctx = canvas.getContext('2d')!;
+		const ctx = el.getContext('2d')!;
+		let alive = true;
 		let W = 0, H = 0, dpr = 1;
 		const resize = () => {
 			dpr = window.devicePixelRatio || 1;
-			W = canvas.clientWidth; H = canvas.clientHeight;
-			canvas.width = W * dpr; canvas.height = H * dpr;
+			W = el.clientWidth; H = el.clientHeight;
+			el.width = W * dpr; el.height = H * dpr;
 		};
 		resize();
-		const ro = new ResizeObserver(resize); ro.observe(canvas);
+		const ro = new ResizeObserver(() => { if (el.isConnected) resize(); }); ro.observe(el);
 
 		const bricks: B[] = [];
 		const pops: Pop[] = [];
@@ -74,13 +78,13 @@
 				ctx.fillText(p.text, p.x, p.y - p.t * 40);
 				ctx.globalAlpha = 1;
 			}
-			raf = requestAnimationFrame(frame);
+			if (alive && el.isConnected) raf = requestAnimationFrame(frame);
 		}
 		raf = requestAnimationFrame(frame);
 
 		function tap(e: PointerEvent) {
 			if (!active) return;
-			const r = canvas.getBoundingClientRect();
+			const r = el.getBoundingClientRect();
 			const x = e.clientX - r.left, y = e.clientY - r.top;
 			const pad = 14; // forgiving for small fingers
 			for (let i = bricks.length - 1; i >= 0; i--) {
@@ -95,8 +99,8 @@
 				}
 			}
 		}
-		canvas.addEventListener('pointerdown', tap);
-		return () => { cancelAnimationFrame(raf); ro.disconnect(); canvas.removeEventListener('pointerdown', tap); };
+		el.addEventListener('pointerdown', tap);
+		return () => { alive = false; cancelAnimationFrame(raf); ro.disconnect(); el.removeEventListener('pointerdown', tap); };
 	});
 
 	// when the real build starts: show the score for a moment, then go away
