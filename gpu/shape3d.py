@@ -264,7 +264,7 @@ def _allowed(kind, dims, sizes):
     return (kind, tuple(sorted(dims))) in sizes
 
 
-def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes):
+def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes, slope_sizes=None):
     """Finds staircase edges starting at plate layer k and covers them with slopes.
     Seen from the outside (c0) inwards, a 45° slope (2 deep) matches heights [1-2, 3] plates and a
     33° slope (3 deep) matches [1, 2, 3] plates, with nothing on top of the high row."""
@@ -287,8 +287,8 @@ def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes):
             continue
         depth = len(pat)
         for di, (dx, dy) in enumerate(DIRS):
-            for d_, width in SLOPES[kind]:
-                if not _allowed(kind, (d_, width), sizes):
+            for d_, width in (slope_sizes or SLOPES)[kind]:
+                if slope_sizes is None and not _allowed(kind, (d_, width), sizes):
                     continue
                 starts = (hgt == 0) & landing & ~vox[:, :, k] if fill else (hgt >= 1) & (hgt <= 2)
                 for ex, ey in np.argwhere(starts):
@@ -331,7 +331,11 @@ def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes):
                     pieces.append((h, w, x0, y0, k, 3, int(c), kind, di))
 
 
-def brickify_plates(vox, lab, sizes=None, slopes=True):
+INV_SLOPES = {"s45": [(2, 2), (2, 1)], "s33": [(3, 2)]}
+INV_NAME = {("s45", 2): "inv45_2", ("s45", 1): "inv45_1", ("s33", 2): "inv33_2"}
+
+
+def brickify_plates(vox, lab, sizes=None, slopes=True, specials=(), inverted=None):
     """Plate-layer grid (3 layers per brick). Slopes go on stepped top edges; where a column is
     solid for a whole brick band (and one colour) bricks are used, elsewhere plates. Returns pieces
     (h, w, x, y, z, height, label, kind, dir) with z and height in plate units, and an owner grid."""
@@ -344,9 +348,26 @@ def brickify_plates(vox, lab, sizes=None, slopes=True):
     pen_p = None
     if not use_p:  # no plates owned: allow them, but only as a last resort
         use_p, pen_p = [(1, 1), (1, 2)], {(1, 1), (1, 2)}
-    # slopes first, at any plate height: they sit on the top edges where the shape steps down
+    # special pieces (wheels, windows, round pieces...) are placed by the designer: they go first
+    for h, w, x, y, z, ht, c, kind, di in specials:
+        if (owner[x:x + h, y:y + w, z:z + ht] >= 0).any():
+            continue
+        owner[x:x + h, y:y + w, z:z + ht] = len(pieces)
+        pieces.append((h, w, x, y, z, ht, c, kind, di))
+    # slopes next, at any plate height: they sit on the top edges where the shape steps down
     for k in range(1, Z - 2):
         place_slopes(vox, lab, owner, k, pieces, sizes, slopes)
+    # inverted slopes under overhangs: the same staircases, upside down
+    if slopes and inverted:
+        n0 = len(pieces)
+        vf, lf, of = vox[:, :, ::-1], lab[:, :, ::-1], owner[:, :, ::-1]
+        for k in range(1, Z - 2):
+            place_slopes(vf, lf, of, k, pieces, sizes, True, {kk: [s_ for s_ in v if INV_NAME[(kk, s_[1])] in inverted]
+                                                               for kk, v in INV_SLOPES.items()})
+        for i in range(n0, len(pieces)):
+            h, w, x, y, z, ht, c, kind, di = pieces[i]
+            width = h if di >= 2 else w
+            pieces[i] = (h, w, x, y, Z - z - ht, ht, c, "x:" + INV_NAME[(kind, width)], di)
     for band in range(0, Z, 3):
         prefer_x = (band // 3) % 2 == 0
         full = np.ones((X, Y), bool)
@@ -477,19 +498,22 @@ def support(vox, lab_colors):
     return vox, lab_colors
 
 
-def tile_plates(vox, lab, palette, sizes=None, slopes=True):
-    """Plate-layer grid + palette labels -> bricks, plates, slopes and tiles (JSON-ready)."""
+def tile_plates(vox, lab, palette, sizes=None, slopes=True, specials=(), inverted=None):
+    """Plate-layer grid + palette labels -> bricks, plates, slopes and tiles (JSON-ready).
+    specials: pre-placed pieces (h, w, x, y, z, height, label, "x:<id>", dir) in plate units.
+    inverted: names of the inverted slopes that may be used under overhangs (None = none)."""
     best = None
+    X = vox.shape[0]
+    fl = {0: 1, 1: 0, 2: 2, 3: 3}
     flips = (False, True) if vox.sum() < 15000 else (False,)
     for flip in flips:
         v = vox[::-1] if flip else vox
         l = lab[::-1] if flip else lab
-        pieces, owner = brickify_plates(v, l, sizes, slopes)
+        sp = [(h, w, X - x - h, y, z, ht, c, k, fl[d]) for h, w, x, y, z, ht, c, k, d in specials] if flip else list(specials)
+        pieces, owner = brickify_plates(v, l, sizes, slopes, sp, inverted)
         kept = keep_grounded_pieces(pieces, owner)
         if flip:
-            X = vox.shape[0]
-            fl = {0: 1, 1: 0, 2: 2, 3: 3}
-            kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") else d)
+            kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") or k.startswith("x:") else d)
                     for h, w, x, y, z, ht, c, k, d in kept]
         if best is None or len(kept) > len(best):
             best = kept
@@ -497,6 +521,11 @@ def tile_plates(vox, lab, palette, sizes=None, slopes=True):
     out = []
     for h, w, x, y, z, ht, l, kind, di in best:
         d = {"h": int(h), "w": int(w), "x": int(x), "y": int(y), "z": round(int(z) / 3, 4), "c": palette[int(l)]["id"]}
+        if kind.startswith("x:"):
+            d["s"] = kind[2:]
+            d["d"] = int(di)
+            out.append(d)
+            continue
         if ht == 1:
             d["p"] = 1
         if kind:

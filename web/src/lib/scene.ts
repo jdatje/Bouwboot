@@ -2,13 +2,15 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { geometryFor, heightOfBrick } from '#lib/ldraw-client.ts';
+import { PALETTE_BY_ID, TRANS_HEX } from '#lib/bricks.ts';
 import type { Brick } from './bricks';
 
 const H = 1.2; // brick height in stud units
 export const RAW = '#cfd3d6'; // colour of bricks before they are painted
 
 const geoCache = new Map<string, THREE.BufferGeometry>();
-const heightOf = (b: Brick) => (b.p ? H / 3 : H);
+const heightOf = (b: Brick) => heightOfBrick(b);
 
 function stud(x: number, y: number, z: number): THREE.BufferGeometry {
 	const s = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 14);
@@ -37,10 +39,13 @@ function slopeGeometry(depth: number, width: number): THREE.BufferGeometry {
 function brickGeometry(b: Brick): THREE.BufferGeometry {
 	const { h, w } = b;
 	const plate = !!b.p;
-	const key = `${h}x${w}${plate ? 'p' : ''}${b.k ?? ''}${b.d ?? ''}`;
+	const key = `${h}x${w}${plate ? 'p' : ''}${b.k ?? ''}${b.d ?? ''}${b.s ?? ''}`;
 	let g = geoCache.get(key);
 	if (g) return g;
-	if (b.k === 's45' || b.k === 's33') {
+	if (b.s) {
+		g = new THREE.BoxGeometry(h - 0.04, heightOf(b) - 0.02, w - 0.04).toNonIndexed();
+		g.deleteAttribute('uv');
+	} else if (b.k === 's45' || b.k === 's33') {
 		const alongX = b.d === 0 || b.d === 1;
 		g = slopeGeometry(alongX ? h : w, alongX ? w : h);
 		// downhill +x is the default; turn for the other directions
@@ -70,6 +75,26 @@ type Item = {
 	colorTo?: THREE.Color;
 	colorT0?: number;
 };
+
+const fixedMats = new Map<string, THREE.MeshStandardMaterial>();
+/** Shared material for fixed-colour sub-parts (black tyres, clear glass). */
+function fixedMat(hex: string, alpha: number) {
+	const k = hex + alpha;
+	let m = fixedMats.get(k);
+	if (!m) {
+		m = new THREE.MeshStandardMaterial({ color: new THREE.Color(hex), roughness: alpha < 1 ? 0.1 : 0.45, side: THREE.DoubleSide,
+			transparent: alpha < 1, opacity: alpha < 1 ? 0.5 : 1, depthWrite: alpha >= 1 });
+		fixedMats.set(k, m);
+	}
+	return m;
+}
+/** Transparent LEGO colours are drawn see-through. */
+function setTrans(mat: THREE.MeshStandardMaterial, hex: string) {
+	const t = TRANS_HEX.has(hex.toUpperCase());
+	mat.transparent = t;
+	mat.opacity = t ? 0.6 : 1;
+	mat.depthWrite = !t;
+}
 
 const haloMat = new THREE.MeshBasicMaterial({ color: 0xff9a00, side: THREE.BackSide, transparent: true, opacity: 0.8, depthWrite: false });
 
@@ -169,12 +194,20 @@ export class BrickScene {
 	}
 
 	add(brick: Brick, color: string = RAW, animate = true) {
-		const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.35, metalness: 0.0 });
-		const mesh = new THREE.Mesh(brickGeometry(brick), mat);
+		const mat = new THREE.MeshStandardMaterial({ color: new THREE.Color(color), roughness: 0.3, metalness: 0.0, side: THREE.DoubleSide });
+		setTrans(mat, color);
+		const mesh: THREE.Mesh<THREE.BufferGeometry, THREE.Material | THREE.Material[]> = new THREE.Mesh(brickGeometry(brick), mat);
 		const it: Item = { mesh, mat, brick, t0: animate ? performance.now() : -1 };
 		this.place(it, animate ? 7 : 0);
 		this.group.add(mesh);
 		this.items.push(it);
+		// swap the placeholder box for the real LDraw shape once it has loaded
+		geometryFor(brick, (id) => PALETTE_BY_ID.get(id)?.hex ?? '#888888').then((g) => {
+			if (!g || !this.items.includes(it)) return;
+			mesh.geometry = g.geo;
+			mesh.material = [mat, ...g.fixed.map((f) => fixedMat(f.hex, f.alpha))];
+			if (it.halo) it.halo.geometry = g.geo;
+		});
 	}
 
 	/** Removes all bricks from index `keep` onward (BrickGPT rollback), with a quick fade. */
@@ -323,7 +356,7 @@ export class BrickScene {
 			if (it.colorT0 !== undefined && it.colorTo) {
 				const t = Math.min(1, Math.max(0, (now - it.colorT0) / 500));
 				it.mat.color.copy(it.colorFrom!).lerp(it.colorTo, t);
-				if (t >= 1) it.colorT0 = undefined;
+				if (t >= 1) { it.colorT0 = undefined; setTrans(it.mat, '#' + it.colorTo.getHexString()); }
 			}
 		}
 		// outline of bricks that are new in this step pulses softly
@@ -331,7 +364,7 @@ export class BrickScene {
 		// fading out removed bricks
 		this.group.children.forEach((m) => {
 			const mesh = m as THREE.Mesh;
-			const mat = mesh.material as THREE.MeshStandardMaterial;
+			const mat = (Array.isArray(mesh.material) ? mesh.material[0] : mesh.material) as THREE.MeshStandardMaterial;
 			if (!this.items.some((i) => i.mesh === mesh)) {
 				mat.transparent = true;
 				mat.opacity -= 0.08;

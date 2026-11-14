@@ -5,7 +5,7 @@ import { colorize } from '#lib/server/gemini.ts';
 import { availableLibrary, fitToStock } from '#lib/server/inventory.ts';
 import { colors as allColors } from '#lib/server/rebrickable.ts';
 import { buildInfo } from '#lib/server/buildinfo.ts';
-import { PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, type Color } from '#lib/bricks.ts';
+import { SOLID_PALETTE as PALETTE, PALETTE_BY_ID, hexToRgb, nearestColor, type Color } from '#lib/bricks.ts';
 
 export const POST: RequestHandler = async ({ params, request }) => {
 	const { variation = 1 } = await request.json().catch(() => ({}));

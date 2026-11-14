@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { execSync } from 'node:child_process';
 import { directAvailable } from '#lib/server/direct.ts';
+import { ldrawAvailable } from '#lib/server/ldraw.ts';
 
 let commit = 'onbekend';
 try {
@@ -9,4 +10,4 @@ try {
 const started = new Date().toISOString();
 
 /** Which version is running (handy to check automatic updates). */
-export const GET = async () => json({ commit, started, direct: await directAvailable() });
+export const GET = async () => json({ commit, started, direct: await directAvailable(), ldraw: ldrawAvailable() });

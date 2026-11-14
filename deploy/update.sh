@@ -8,6 +8,7 @@ runuser -u bouwboot -- git pull --ff-only
 cd web
 runuser -u bouwboot -- npm ci --no-audit --no-fund
 runuser -u bouwboot -- npm run build
+bash /opt/bouwboot/deploy/fetch-data.sh || echo 'gegevens ophalen mislukt'
 systemctl restart bouwboot
 sleep 2
 systemctl --no-pager --lines=5 status bouwboot || true

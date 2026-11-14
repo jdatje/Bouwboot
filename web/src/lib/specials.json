@@ -1,0 +1,576 @@
+{
+	"_doc": "Special pieces the designer can use (groups 1-4). foot = [length along x, depth along y, height in plates] in the d=0 orientation. ldraw = LDraw files that draw it (at = offset in LDU, ry = quarter turns about the vertical axis, rx = quarter turns about x, c = colour: 'main' or a colour id). r0 = quarter turns that bring the LDraw drawing into the d=0 orientation; d adds more quarter turns. buy = real parts (BrickLink numbers) with colour and quantity. down = which side is low for slopes at d=0. Slopes at d=0: high side at -x, low side at +x. Inverted slopes at d=0: full width on top, the slanted underside faces +x (the top sticks out over +x).",
+	"wheels_s": {
+		"name": "Wielen klein",
+		"group": 1,
+		"foot": [
+			2,
+			4,
+			3
+		],
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "4600",
+				"c": "main"
+			},
+			{
+				"f": "4624c01",
+				"c": 15,
+				"at": [
+					27,
+					6,
+					0
+				],
+				"ry": 1
+			},
+			{
+				"f": "4624c01",
+				"c": 15,
+				"at": [
+					-27,
+					6,
+					0
+				],
+				"ry": -1
+			}
+		],
+		"buy": [
+			{
+				"p": "4600",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "4624",
+				"c": 15,
+				"q": 2
+			},
+			{
+				"p": "3641",
+				"c": 0,
+				"q": 2
+			}
+		]
+	},
+	"wheels_l": {
+		"name": "Wielen groot",
+		"group": 1,
+		"foot": [
+			3,
+			6,
+			5
+		],
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "6157",
+				"c": "main"
+			},
+			{
+				"f": "6014b",
+				"c": 15,
+				"at": [
+					36,
+					10,
+					0
+				],
+				"ry": 1
+			},
+			{
+				"f": "6015",
+				"c": 0,
+				"at": [
+					42,
+					10,
+					0
+				],
+				"ry": 1
+			},
+			{
+				"f": "6014b",
+				"c": 15,
+				"at": [
+					-36,
+					10,
+					0
+				],
+				"ry": -1
+			},
+			{
+				"f": "6015",
+				"c": 0,
+				"at": [
+					-42,
+					10,
+					0
+				],
+				"ry": -1
+			}
+		],
+		"buy": [
+			{
+				"p": "6157",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "6014b",
+				"c": 15,
+				"q": 2
+			},
+			{
+				"p": "6015",
+				"c": 0,
+				"q": 2
+			}
+		]
+	},
+	"window_2x2": {
+		"name": "Raam 1x2x2",
+		"group": 2,
+		"foot": [
+			2,
+			1,
+			6
+		],
+		"ldraw": [
+			{
+				"f": "60592",
+				"c": "main"
+			},
+			{
+				"f": "60601",
+				"c": 47
+			}
+		],
+		"buy": [
+			{
+				"p": "60592",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "60601",
+				"c": 47,
+				"q": 1
+			}
+		]
+	},
+	"window_2x3": {
+		"name": "Raam 1x2x3",
+		"group": 2,
+		"foot": [
+			2,
+			1,
+			9
+		],
+		"ldraw": [
+			{
+				"f": "60593",
+				"c": "main"
+			},
+			{
+				"f": "60602",
+				"c": 47
+			}
+		],
+		"buy": [
+			{
+				"p": "60593",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "60602",
+				"c": 47,
+				"q": 1
+			}
+		]
+	},
+	"window_4x3": {
+		"name": "Raam 1x4x3",
+		"group": 2,
+		"foot": [
+			4,
+			1,
+			9
+		],
+		"ldraw": [
+			{
+				"f": "60594",
+				"c": "main"
+			},
+			{
+				"f": "60603",
+				"c": 47
+			}
+		],
+		"buy": [
+			{
+				"p": "60594",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "60603",
+				"c": 47,
+				"q": 1
+			}
+		]
+	},
+	"door": {
+		"name": "Deur 1x4x6",
+		"group": 2,
+		"foot": [
+			4,
+			1,
+			18
+		],
+		"ldraw": [
+			{
+				"f": "60596",
+				"c": "main"
+			},
+			{
+				"f": "60623",
+				"c": "main",
+				"at": [
+					-30,
+					4,
+					0
+				]
+			}
+		],
+		"buy": [
+			{
+				"p": "60596",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "60623",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"round_1": {
+		"name": "Ronde steen 1x1",
+		"group": 3,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"ldraw": [
+			{
+				"f": "3062b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3062b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"round_p1": {
+		"name": "Ronde plaat 1x1",
+		"group": 3,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"ldraw": [
+			{
+				"f": "6141",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4073",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"round_2": {
+		"name": "Ronde steen 2x2",
+		"group": 3,
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"ldraw": [
+			{
+				"f": "3941",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3941",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"round_p2": {
+		"name": "Ronde plaat 2x2",
+		"group": 3,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"ldraw": [
+			{
+				"f": "4032a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4032",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"cone_1": {
+		"name": "Kegel 1x1",
+		"group": 3,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"ldraw": [
+			{
+				"f": "4589",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4589",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"cone_2": {
+		"name": "Kegel 2x2x2",
+		"group": 3,
+		"foot": [
+			2,
+			2,
+			6
+		],
+		"ldraw": [
+			{
+				"f": "3942c",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3942c",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"dish_2": {
+		"name": "Schotel 2x2",
+		"group": 3,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"ldraw": [
+			{
+				"f": "4740",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4740",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"arch_4": {
+		"name": "Boog 1x4",
+		"group": 4,
+		"foot": [
+			4,
+			1,
+			3
+		],
+		"ldraw": [
+			{
+				"f": "3659",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3659",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"arch_6": {
+		"name": "Boog 1x6",
+		"group": 4,
+		"foot": [
+			6,
+			1,
+			3
+		],
+		"ldraw": [
+			{
+				"f": "3455",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3455",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"curve_1": {
+		"name": "Gebogen dakpan 2x1",
+		"group": 4,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"slope": true,
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "11477",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11477",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"curve_2": {
+		"name": "Gebogen dakpan 2x2",
+		"group": 4,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"slope": true,
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "15068",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15068",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"inv45_1": {
+		"name": "Omgekeerde dakpan 45° 2x1",
+		"group": 4,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"slope": true,
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "3665a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3665",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"inv45_2": {
+		"name": "Omgekeerde dakpan 45° 2x2",
+		"group": 4,
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"slope": true,
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "3660a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3660",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"inv33_2": {
+		"name": "Omgekeerde dakpan 33° 3x2",
+		"group": 4,
+		"foot": [
+			3,
+			2,
+			3
+		],
+		"slope": true,
+		"r0": 1,
+		"ldraw": [
+			{
+				"f": "3747a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3747b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	}
+}

@@ -4,7 +4,18 @@
  * z is in brick layers (a plate sits at thirds: 0, 0.3333, ...). p = 1 for a plate (a third as high).
  * k = special kind: 's45' / 's33' slope (d = downhill direction: 0 +x, 1 -x, 2 +y, 3 -y) or 't' tile.
  */
-export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number; p?: number; k?: 's45' | 's33' | 't'; d?: number };
+/** s = special piece from specials.json (wheels, windows, round pieces, arches, curved slopes); d = direction. */
+import SPECIALS_JSON from '#lib/specials.json';
+type SpecialData = { name: string; buy: { p: string; c: 'main' | number; q: number }[] };
+const SPECIALS_DATA = Object.fromEntries(Object.entries(SPECIALS_JSON).filter(([k]) => !k.startsWith('_'))) as unknown as Record<string, SpecialData>;
+/** The part a special piece is listed under (its first "buy" part), and all buyable special parts → name. */
+const SPECIAL_MAIN: Record<string, string> = Object.fromEntries(Object.entries(SPECIALS_DATA).map(([k, v]) => [k, v.buy[0].p]));
+export const SPECIAL_PART_NAMES: Record<string, string> = Object.fromEntries(
+	Object.values(SPECIALS_DATA).flatMap((v) => v.buy.map((x, i) => [x.p, i === 0 ? v.name : v.name + ' (onderdeel)']))
+);
+export const SPECIAL_NAME = (id: string) => SPECIALS_DATA[id]?.name ?? id;
+
+export type Brick = { h: number; w: number; x: number; y: number; z: number; c?: number; p?: number; k?: 's45' | 's33' | 't'; d?: number; s?: string };
 
 /** BrickGPT's brick library: size (short x long) → LDraw/Rebrickable/BrickLink part number. */
 export const LIBRARY: Record<string, string> = {
@@ -78,12 +89,12 @@ export function partInfo(part: string): { size: string; plate: boolean; kind: Pa
 const KIND_LABEL: Record<PartKind, string> = { brick: 'Steen', plate: 'Plaat', s45: 'Dakpan 45°', s33: 'Dakpan 33°', tile: 'Tegel' };
 export function partLabel(part: string, fallback?: string): string {
 	const i = partInfo(part);
-	return i ? `${KIND_LABEL[i.kind]} ${i.size}` : fallback ?? part;
+	return i ? `${KIND_LABEL[i.kind]} ${i.size}` : SPECIAL_PART_NAMES[part] ?? fallback ?? part;
 }
 /** Key used for "which sizes do we own": '2x4' brick, 'p2x4' plate, 's452x2' slope, 't1x2' tile. */
 export function stockKey(part: string): string | null {
 	const i = partInfo(part);
-	if (!i) return null;
+	if (!i) return SPECIAL_PART_NAMES[part] ? 'x' + part : null;
 	return ({ brick: '', plate: 'p', s45: 's45', s33: 's33', tile: 't' } as const)[i.kind] + i.size;
 }
 
@@ -91,6 +102,7 @@ export function sizeOf(b: Brick): string {
 	return `${Math.min(b.h, b.w)}x${Math.max(b.h, b.w)}`;
 }
 export function partOf(b: Brick): string {
+	if (b.s) return SPECIAL_MAIN[b.s] ?? b.s;
 	const size = sizeOf(b);
 	if (b.k === 's45') return SLOPES45[size];
 	if (b.k === 's33') return SLOPES33[size];
@@ -105,7 +117,7 @@ export function parseBrick(s: string): Brick | null {
 	return { h, w, x, y, z };
 }
 
-export type Color = { id: number; name: string; hex: string; bl: number };
+export type Color = { id: number; name: string; hex: string; bl: number; trans?: boolean };
 
 /** Common colours of basic bricks. id = Rebrickable/LDraw colour id, bl = BrickLink colour id. */
 export const PALETTE: Color[] = [
@@ -134,9 +146,20 @@ export const PALETTE: Color[] = [
 	{ id: 28, name: 'Donker zand', hex: '#958A73', bl: 69 },
 	{ id: 92, name: 'Nougat', hex: '#D09168', bl: 28 },
 	{ id: 70, name: 'Bruin', hex: '#582A12', bl: 88 },
-	{ id: 308, name: 'Donkerbruin', hex: '#352100', bl: 120 }
+	{ id: 308, name: 'Donkerbruin', hex: '#352100', bl: 120 },
+	// transparent (lamps, headlights, windows)
+	{ id: 47, name: 'Doorzichtig', hex: '#FCFCFC', bl: 12, trans: true },
+	{ id: 36, name: 'Doorzichtig rood', hex: '#D9261A', bl: 17, trans: true },
+	{ id: 46, name: 'Doorzichtig geel', hex: '#F5CD2F', bl: 19, trans: true },
+	{ id: 57, name: 'Doorzichtig oranje', hex: '#FF800D', bl: 18, trans: true },
+	{ id: 41, name: 'Doorzichtig lichtblauw', hex: '#AEEFEC', bl: 15, trans: true },
+	{ id: 33, name: 'Doorzichtig blauw', hex: '#0020A0', bl: 14, trans: true },
+	{ id: 34, name: 'Doorzichtig groen', hex: '#84B68D', bl: 20, trans: true }
 ];
 export const PALETTE_BY_ID = new Map(PALETTE.map((c) => [c.id, c]));
+/** Colours for ordinary painting (no transparent ones). */
+export const SOLID_PALETTE = PALETTE.filter((c) => !c.trans);
+export const TRANS_HEX = new Set(PALETTE.filter((c) => c.trans).map((c) => c.hex.toUpperCase()));
 export const DEFAULT_COLOR = 71;
 
 export function hexToRgb(hex: string): [number, number, number] {
@@ -145,7 +168,7 @@ export function hexToRgb(hex: string): [number, number, number] {
 }
 
 /** Nearest palette colour (simple weighted RGB distance). */
-export function nearestColor(rgb: [number, number, number], among: Color[] = PALETTE): Color {
+export function nearestColor(rgb: [number, number, number], among: Color[] = SOLID_PALETTE): Color {
 	let best = among[0];
 	let bd = Infinity;
 	for (const c of among) {
@@ -161,13 +184,17 @@ export type PartCount = { part: string; color: number; qty: number };
 
 export function countParts(bricks: Brick[]): PartCount[] {
 	const m = new Map<string, PartCount>();
-	for (const b of bricks) {
-		const part = partOf(b);
-		const color = b.c ?? DEFAULT_COLOR;
+	const add = (part: string, color: number, qty: number) => {
 		const k = `${part}/${color}`;
 		const e = m.get(k);
-		if (e) e.qty++;
-		else m.set(k, { part, color, qty: 1 });
+		if (e) e.qty += qty;
+		else m.set(k, { part, color, qty });
+	};
+	for (const b of bricks) {
+		const color = b.c ?? DEFAULT_COLOR;
+		const sp = b.s ? SPECIALS_DATA[b.s] : null;
+		if (sp) for (const x of sp.buy) add(x.p, x.c === 'main' ? color : x.c, x.q);
+		else add(partOf(b), color, 1);
 	}
 	return [...m.values()].sort((a, b) => b.qty - a.qty);
 }

@@ -12,7 +12,8 @@ const PY = () => process.env.PYTHON || 'python3';
 export const COLOR_NAMES: [string, number][] = [['white', 15], ['black', 0], ['light_grey', 71], ['dark_grey', 72], ['red', 4],
 	['dark_red', 320], ['orange', 25], ['light_orange', 191], ['yellow', 14], ['lime', 27], ['bright_green', 10], ['green', 2],
 	['dark_green', 288], ['olive', 326], ['sand_green', 378], ['azure', 322], ['medium_blue', 73], ['blue', 1], ['dark_blue', 272],
-	['light_pink', 29], ['pink', 5], ['tan', 19], ['dark_tan', 28], ['nougat', 92], ['brown', 70], ['dark_brown', 308]];
+	['light_pink', 29], ['pink', 5], ['tan', 19], ['dark_tan', 28], ['nougat', 92], ['brown', 70], ['dark_brown', 308],
+	['trans_clear', 47], ['trans_red', 36], ['trans_yellow', 46], ['trans_orange', 57], ['trans_light_blue', 41], ['trans_blue', 33], ['trans_green', 34]];
 
 function run(args: string[], input: string, timeoutMs: number): Promise<string> {
 	return new Promise((resolve, reject) => {

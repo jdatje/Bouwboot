@@ -15,9 +15,32 @@ PARTS (applied in order; a later part overwrites what is already there)
 - {"op":"wedge", ... same fields ..., "high":"+x"}   ramp: full height at the "high" side (+x,-x,+y,-y), zero at the other.
   Use for bonnets, windscreens, ship bows, tails.
 - {"op":"cylinder","axis":"z","x":5,"y":5,"z":0,"r":2,"h":12,"color":"white"}   standing cylinder: x,y = centre, z = bottom.
-- {"op":"cylinder","axis":"y","x":4,"y":0,"z":4,"r":1.6,"len":2,"color":"black"}   lying cylinder (a WHEEL): x = centre,
-  z = centre height in plates (for a wheel on the ground: z = r*2.5), y = where it starts, len = thickness in studs.
-  axis "x" works the same with x and y swapped.
+- {"op":"cylinder","axis":"y","x":4,"y":0,"z":4,"r":1.6,"len":2,"color":"black"}   lying cylinder (barrels, logs,
+  cannons): x = centre, z = centre height in plates, y = where it starts, len = length in studs. axis "x" likewise.
+
+SPECIAL LEGO PIECES (real LEGO parts: use them, they make the model look much better)
+- {"op":"wheels","x":2,"size":"small"}   a pair of wheels on an axle holder, centred under the vehicle. x = where the
+  2-stud-long holder starts. small: the holder + wheels are 3 plates high, so the body/chassis starts at z=3; the
+  vehicle body should be 4-6 studs wide. "size":"large": 5 plates high (body starts at z=5), for trucks, body 6-8 wide.
+  Cars need 2 (front and back), long trucks 3. Wheels are always on the ground (z=0).
+- {"op":"window","x":4,"y":0,"z":4,"size":"2x2","color":"white"}   window frame with glass, set INTO a wall that is
+  1 stud thick at that spot. size "2x2" (2 studs wide, 6 plates high), "2x3" (2 wide, 9 high), "4x3" (4 wide, 9 high).
+  The wall runs along x by default; add "facing":"x" for a wall that runs along y. Car windscreens/side windows too.
+- {"op":"door","x":4,"y":0,"z":0,"color":"red"}   door in a frame: 4 studs wide, 18 plates high, in a wall along x
+  (or "facing":"x").
+- {"op":"arch","x":0,"y":0,"z":12,"len":4,"along":"x","color":"grey"}   arch brick (3 plates high) that spans an
+  opening: len 4 spans a 2-stud gap, len 6 a 4-stud gap. Put it on top of the two pillars; leave the gap below open.
+- {"op":"curve","x":8,"y":0,"z":9,"w":2,"down":"+x","color":"red"}   curved slope: 2 studs long, w = 1 or 2 studs
+  wide, 2 plates high, curving down towards "down" (+x,-x,+y,-y). Smooth car bonnets, rounded roofs, noses, tails.
+- {"op":"cone","x":5,"y":5,"z":12,"size":1,"color":"orange"}   cone: size 1 (1x1, 3 plates) or 2 (2x2, 6 plates). x,y =
+  corner. Chimney tops, traffic cones, rocket noses, torches, tree tops, horns.
+- {"op":"dish","x":3,"y":3,"z":9,"color":"light_grey"}   2x2 round dish (1 plate): radar, satellite dish, lamp shade, wheel cap.
+- A standing cylinder with r 0.5 (1x1) or r 1 (2x2) is built from ROUND bricks and plates: masts, poles, lamps,
+  chimneys, tree trunks, legs, eyes, headlights. (x,y = centre, so r 0.5 at x 3.5 fills stud 3.)
+- Transparent colours (trans_clear, trans_red, trans_yellow, trans_orange, trans_blue, trans_light_blue, trans_green)
+  for headlights (trans_clear/yellow), tail lights (trans_red), siren lights (trans_blue/red), glass, water, fire.
+- Inverted slopes are added automatically under overhangs; you don't place them.
+
 - Any part can have "cut": true -> it REMOVES material instead (window and door openings, garage doors, the inside
   of a boat, the space under an arch). No color needed.
 - Any part can have "mirror": true -> it is also applied mirrored front-to-back (across y = size.d/2). Use it for
@@ -27,11 +50,11 @@ RULES
 - Everything must rest on the ground or on another part. Nothing floats. Thin things need something under them.
 - Nothing thinner than 1 stud. Masts, poles and legs are 1x1 or 2x2 studs. Sails, wings and walls are 1 stud thick.
 - Buildings: make each block solid, then cut 1 stud inside the walls only if you want it open (garages, open doors).
-  Windows are easiest as a 1-stud-deep box in another colour (white, medium_blue) set into the wall surface.
+  Use "window" and "door" pieces in the walls; "arch" over gates and garage openings.
 - Details in another colour (stripes, lights, windows, eyes) are thin boxes placed ON the surface, overwriting it.
 - Use whole numbers for x, y, w, d (half studs only for cylinder centres). Prefer h that are multiples of 3.
-- Vehicles: wheels are lying cylinders with r 1.5-2 studs that stick out BELOW the body (the body starts above z=0)
-  and slightly outside it; use "mirror". Lights are small coloured boxes (red, blue, yellow, orange), not grey.
+- Vehicles: ALWAYS use the "wheels" piece, never cylinders, for wheels. Headlights and tail lights in transparent
+  colours (a 1x1 round plate or a small box), windscreen and side windows with "window" or trans_clear/trans_light_blue.
 - Ships: sails are big - 1 stud thick, 5-8 studs wide, taller than the hull, standing ACROSS the ship (thin in x)
   and placed just behind their mast; white unless asked otherwise. Cut the deck area open so the hull has sides.
 - Animals: body, head, 4 legs (2x2 studs or thicker), tail; eyes as small black/white boxes on the head.

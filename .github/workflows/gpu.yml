@@ -2,7 +2,7 @@ name: gpu
 on:
   push:
     branches: [main]
-    paths: ["gpu/**", ".github/workflows/gpu.yml"]
+    paths: ["gpu/**", "!gpu/direct*", "!gpu/try_direct.py", ".github/workflows/gpu.yml"]
   workflow_dispatch:
     inputs:
       captions:

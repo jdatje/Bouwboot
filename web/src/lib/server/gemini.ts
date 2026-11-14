@@ -1,4 +1,4 @@
-import { PALETTE, type Brick, type Color } from '#lib/bricks.ts';
+import { PALETTE, SOLID_PALETTE, type Brick, type Color } from '#lib/bricks.ts';
 
 const MODEL = () => process.env.GEMINI_MODEL || 'gemini-flash-latest';
 
@@ -87,7 +87,7 @@ export async function colorize(
 	prompt: string,
 	caption: string,
 	bricks: Brick[],
-	palette: Color[] = PALETTE,
+	palette: Color[] = SOLID_PALETTE,
 	variation = 0
 ): Promise<number[]> {
 	const list = bricks

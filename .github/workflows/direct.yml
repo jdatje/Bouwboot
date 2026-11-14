@@ -10,6 +10,10 @@ on:
         description: "size in studs (16, 24, 32)"
         required: false
         default: "24"
+      pieces:
+        description: "target piece count"
+        required: false
+        default: "300"
       model:
         description: "Gemini text model"
         required: false
@@ -28,6 +32,7 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SUBJECTS: ${{ github.event.inputs.subjects }}
           STUDS: ${{ github.event.inputs.studs }}
+          PIECES: ${{ github.event.inputs.pieces }}
           GEMINI_TEXT_MODEL: ${{ github.event.inputs.model }}
         run: python gpu/try_direct.py
       - uses: actions/upload-artifact@v4
