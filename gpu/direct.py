@@ -229,3 +229,72 @@ def parse_sizes(items):
         dims = tuple(sorted(map(int, x[len(kind):].split("x"))))
         out.append((kind, dims) if kind else dims)
     return out
+
+
+def scale_program(prog, f):
+    """The same design f times bigger. Shape parts grow; special pieces keep their real size but move
+    with the design (wheels become the large ones on a scaled-up vehicle)."""
+    if abs(f - 1) < 1e-3:
+        return prog
+    def span(a, n):  # scale a start and a length so neighbouring parts still meet
+        a2 = round(a * f)
+        return a2, max(1, round((a + n) * f) - a2)
+    out = []
+    for p in prog["parts"]:
+        if not isinstance(p, dict):
+            continue
+        q = dict(p)
+        op = q.get("op", "box")
+        if op in SPECIAL_OPS:
+            for k in ("x", "y"):
+                if k in q:
+                    q[k] = round(float(q[k]) * f)
+            q["z"] = round(float(q.get("z", 0)) * f)
+            if op == "wheels" and f >= 1.4:
+                q["size"] = "large"
+        elif op == "cylinder":
+            for k in ("x", "y", "r", "len"):
+                if k in q:
+                    q[k] = round(float(q[k]) * f * 2) / 2
+            q["z"] = round(float(q.get("z", 0)) * f)
+            if "h" in q:
+                q["h"] = max(1, round(float(q["h"]) * f))
+        else:
+            if "x" in q and "w" in q:
+                q["x"], q["w"] = span(float(q["x"]), float(q["w"]))
+            if "y" in q and "d" in q:
+                q["y"], q["d"] = span(float(q["y"]), float(q["d"]))
+            if "h" in q:
+                q["z"], q["h"] = span(float(q.get("z", 0)), float(q["h"]))
+        out.append(q)
+    size = dict(prog.get("size") or {})
+    for k in ("w", "d"):
+        if k in size:
+            size[k] = round(float(size[k]) * f)
+    return {**prog, "size": size, "parts": out}
+
+
+def program_to_target(prog, target, sizes=None, max_scale=3.5):
+    """Bricks for the design, scaled up (never down) until the piece count is near the target."""
+    def build(f, hollow_inside=True):
+        return program_to_bricks(scale_program(prog, f), sizes=sizes, hollow_inside=hollow_inside)
+    best = build(1.0)
+    if not target or len(best) >= 0.75 * target:
+        return best
+    lo, hi = 1.0, max_scale
+    top = build(hi)
+    if len(top) < target:  # even the biggest version stays under: a solid one uses more pieces
+        solid = build(hi, False)
+        return solid if abs(len(solid) - target) < abs(len(top) - target) else top
+    for _ in range(7):
+        mid = (lo + hi) / 2
+        b = build(mid)
+        if abs(len(b) - target) < abs(len(best) - target):
+            best = b
+        if abs(len(b) - target) <= 0.12 * target:
+            break
+        if len(b) < target:
+            lo = mid
+        else:
+            hi = mid
+    return best

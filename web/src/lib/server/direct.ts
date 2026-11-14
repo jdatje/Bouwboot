@@ -42,6 +42,12 @@ export function directAvailable(): Promise<boolean> {
 	return available;
 }
 
+/** How many parts Gemini should use: more detail for bigger builds (200 pieces ≈ 40 parts, 1400 ≈ 160). */
+const partsFor = (pieces: number) => {
+	const n = Math.max(25, Math.min(180, Math.round(20 + pieces / 10)));
+	return `${Math.round(n * 0.8)}-${n}`;
+};
+
 export type Program = { title?: string; plan?: string; size?: { w: number; d: number }; parts: object[] };
 
 export async function designProgram(request: string, studs: number, pieces: number, variation: number, colorIds?: number[]): Promise<Program> {
@@ -52,7 +58,8 @@ export async function designProgram(request: string, studs: number, pieces: numb
 	let names = COLOR_NAMES.filter(([, id]) => !colorIds || colorIds.includes(id)).map(([n]) => n);
 	if (!names.length) names = COLOR_NAMES.map(([n]) => n);
 	const spec = readFileSync(path.join(GPU_DIR(), 'direct_prompt.txt'), 'utf8')
-		.replace('__STUDS__', String(studs)).replace('__PIECES__', String(pieces)).replace('__COLORS__', names.join(', '));
+		.replace('__STUDS__', String(studs)).replace('__PIECES__', String(pieces))
+		.replace('__PARTS__', `${partsFor(pieces)}`).replace('__COLORS__', names.join(', '));
 	const prog = await gemini<Program>(
 		[{ text: spec + '\n\nDesign: ' + request + (variation > 0 ? `\n(Variation ${variation}: make a clearly different design than the obvious one.)` : '') }],
 		null, variation > 0 ? 1.0 : 0.7);
@@ -61,7 +68,7 @@ export async function designProgram(request: string, studs: number, pieces: numb
 }
 
 export async function programToBricks(program: Program, sizes: string[] | null, target?: number): Promise<ShapeBrick[]> {
-	const out = JSON.parse(await run(['direct_cli.py'], JSON.stringify({ program, sizes, target: target ?? null }), 60000));
+	const out = JSON.parse(await run(['direct_cli.py'], JSON.stringify({ program, sizes, target: target ?? null }), 180000));
 	if (out.error) throw new Error(out.error);
 	return out.bricks;
 }

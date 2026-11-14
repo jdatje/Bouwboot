@@ -58,7 +58,9 @@ RULES
 - Ships: a sailing ship MUST have sails (one per mast): sails are big - 1 stud thick, 5-8 studs wide, taller than the hull, standing ACROSS the ship (thin in x)
   and placed just behind their mast; white unless asked otherwise. Cut the deck area open so the hull has sides.
 - Animals: body, head, 4 legs (2x2 studs or thicker), tail; eyes as small black/white boxes on the head.
-- Make it recognisable: get the big shapes and proportions right first, then add 10-30 details. 25-70 parts in total.
+- Make it recognisable: get the big shapes and proportions right first, then the details. Use about __PARTS__ parts in
+  total: a bigger model gets MORE and finer details (stripes, eyes, fur patches, windows, trim, small extras), not
+  just bigger blocks.
 - Colours (only these): __COLORS__.
 
 The request is usually Dutch. Dutch words that look English keep their Dutch meaning:

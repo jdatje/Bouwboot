@@ -6,7 +6,7 @@ import numpy as np, requests
 import matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 sys.path.insert(0, os.path.dirname(__file__))
-from direct import program_to_bricks, COLORS, PALETTE
+from direct import program_to_bricks, program_to_target, COLORS, PALETTE
 
 STUDS = int(os.environ.get("STUDS", "24"))
 MODEL = os.environ.get("GEMINI_TEXT_MODEL", "gemini-flash-latest")
@@ -17,7 +17,7 @@ SPEC = open(os.path.join(os.path.dirname(__file__), "direct_prompt.txt")).read()
 
 
 def ask(subject, variation=0):
-    text = SPEC.replace("__STUDS__", str(STUDS)).replace("__PIECES__", os.environ.get("PIECES", "300")).replace("__COLORS__", ", ".join(n for n, _, _ in COLORS)) + f"\n\nDesign: {subject}" + (
+    text = SPEC.replace("__STUDS__", str(STUDS)).replace("__PIECES__", os.environ.get("PIECES", "300")).replace("__PARTS__", "{}-{}".format(round(0.8 * max(25, min(180, round(20 + int(os.environ.get("PIECES", "300")) / 10)))), max(25, min(180, round(20 + int(os.environ.get("PIECES", "300")) / 10))))).replace("__COLORS__", ", ".join(n for n, _, _ in COLORS)) + f"\n\nDesign: {subject}" + (
         f"\n(Variation {variation}: make a clearly different design.)" if variation else "")
     for attempt in range(3):
         r = requests.post(f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
@@ -64,7 +64,7 @@ else:
 for i, (s, prog, use, secs) in enumerate(jobs):
     json.dump(prog, open(f"out/direct{i}.json", "w"), indent=1)
     try:
-        t = time.time(); bricks = program_to_bricks(prog)
+        t = time.time(); bricks = program_to_target(prog, int(os.environ.get('PIECES', '300')))
         kinds = collections.Counter(b.get("k", "p" if b.get("p") else "b") for b in bricks)
         print(f"[{s}] {len(prog['parts'])} parts -> {len(bricks)} pieces {dict(kinds)}, gemini {secs:.1f}s, bricks {time.time()-t:.1f}s, "
               f"tokens {use.get('promptTokenCount')}/{use.get('candidatesTokenCount')}/{use.get('thoughtsTokenCount')}", flush=True)
