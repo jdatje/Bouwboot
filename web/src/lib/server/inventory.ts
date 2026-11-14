@@ -1,7 +1,7 @@
 import { db, type BuildRow } from './db';
-import { countParts, LIBRARY, stockKey, type Brick, type PartCount } from '#lib/bricks.ts';
+import { canonPart, countParts, LIBRARY, stockKey, type Brick, type PartCount } from '#lib/bricks.ts';
 
-const key = (part: string, color: number) => `${part}/${color}`;
+const key = (part: string, color: number) => `${canonPart(part)}/${color}`;
 
 export type StockLine = {
 	part: string;

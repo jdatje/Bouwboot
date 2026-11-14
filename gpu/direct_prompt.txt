@@ -21,7 +21,7 @@ PARTS (applied in order; a later part overwrites what is already there)
 SPECIAL LEGO PIECES (real LEGO parts: use them, they make the model look much better)
 - {"op":"wheels","x":2,"size":"small"}   a pair of wheels on an axle holder, centred under the vehicle. x = where the
   2-stud-long holder starts. small: the holder + wheels are 3 plates high, so the body/chassis starts at z=3; the
-  vehicle body should be 4-6 studs wide. "size":"large": 5 plates high (body starts at z=5), for trucks, body 6-8 wide.
+  vehicle body must be exactly 4 studs wide (so the wheels show at the sides). "size":"large": 5 plates high (body starts at z=5), for trucks, body 6-8 wide.
   Cars need 2 (front and back), long trucks 3. Wheels are always on the ground (z=0).
 - {"op":"window","x":4,"y":0,"z":4,"size":"2x2","color":"white"}   window frame with glass, set INTO a wall that is
   1 stud thick at that spot. size "2x2" (2 studs wide, 6 plates high), "2x3" (2 wide, 9 high), "4x3" (4 wide, 9 high).
@@ -55,7 +55,7 @@ RULES
 - Use whole numbers for x, y, w, d (half studs only for cylinder centres). Prefer h that are multiples of 3.
 - Vehicles: ALWAYS use the "wheels" piece, never cylinders, for wheels. Headlights and tail lights in transparent
   colours (a 1x1 round plate or a small box), windscreen and side windows with "window" or trans_clear/trans_light_blue.
-- Ships: sails are big - 1 stud thick, 5-8 studs wide, taller than the hull, standing ACROSS the ship (thin in x)
+- Ships: a sailing ship MUST have sails (one per mast): sails are big - 1 stud thick, 5-8 studs wide, taller than the hull, standing ACROSS the ship (thin in x)
   and placed just behind their mast; white unless asked otherwise. Cut the deck area open so the hull has sides.
 - Animals: body, head, 4 legs (2x2 studs or thicker), tail; eyes as small black/white boxes on the head.
 - Make it recognisable: get the big shapes and proportions right first, then add 10-30 details. 25-70 parts in total.

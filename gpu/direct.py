@@ -72,6 +72,8 @@ def _specials_of(p, D):
         out.append((sid, int(round(x if xx is None else xx)), int(round(y if yy is None else yy)), z if zz is None else zz, h, w, ht, d))
     if op == "wheels":
         sid = "wheels_l" if str(p.get("size", "small")).startswith("l") else "wheels_s"
+        if sid == "wheels_s" and D > 5.5:  # small wheels would vanish under a wide body
+            sid = "wheels_l"
         h, w, _ = SPECIALS[sid]["foot"]
         yy = p["y"] if "y" in p and p.get("y") is not None and "y_given" in p else D / 2 - w / 2
         put(sid, h, w, 0, yy=yy, zz=int(round(float(p.get("z", 0)))))

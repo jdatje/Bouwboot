@@ -13,10 +13,13 @@ if ! fresh "$DATA_DIR/ldraw/.done"; then
   tmp="$(mktemp -d "$DATA_DIR/ldraw-new.XXXX")"
   if curl -fsSL -o "$tmp/complete.zip" https://library.ldraw.org/library/updates/complete.zip &&
      curl -fsSL -o "$tmp/unf.zip" https://library.ldraw.org/library/unofficial/ldrawunf.zip; then
-    (cd "$tmp" && unzip -q complete.zip && mkdir -p unofficial && cd unofficial && unzip -q ../unf.zip) &&
-      rm -f "$tmp"/*.zip && touch "$tmp/.done" &&
-      rm -rf "$DATA_DIR/ldraw.old" && { [ -d "$DATA_DIR/ldraw" ] && mv "$DATA_DIR/ldraw" "$DATA_DIR/ldraw.old" || true; } &&
+    if (cd "$tmp" && unzip -q complete.zip && mkdir -p unofficial && cd unofficial && unzip -q ../unf.zip); then
+      rm -f "$tmp"/*.zip && touch "$tmp/.done"
+      rm -rf "$DATA_DIR/ldraw.old"; [ -d "$DATA_DIR/ldraw" ] && mv "$DATA_DIR/ldraw" "$DATA_DIR/ldraw.old"
       mv "$tmp" "$DATA_DIR/ldraw" && rm -rf "$DATA_DIR/ldraw.old" "$DATA_DIR/ldraw-cache"
+    else
+      echo "LDraw uitpakken mislukt (schijf vol?)"; rm -rf "$tmp"
+    fi
   else
     echo "LDraw ophalen mislukt"; rm -rf "$tmp"
   fi

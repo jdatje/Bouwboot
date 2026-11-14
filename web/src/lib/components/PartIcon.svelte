@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { partInfo } from '#lib/bricks.ts';
+	import { LIBRARY, PLATES, partInfo, PALETTE } from '#lib/bricks.ts';
+	import { partIcon } from '#lib/ldraw-icon.ts';
 	// A brick or plate seen from slightly above: the top with studs, and a front edge whose
 	// height shows the difference (a plate is a third as high as a brick).
 	let { part = null, size = null, plate = false, hex = '#999', px = 12 }:
@@ -14,12 +15,26 @@
 	const kind = $derived(kind0);
 	const side = $derived(info?.plate ? 2.6 : 7);
 	const slope = $derived(kind === 's45' || kind === 's33');
+	// the real LDraw shape, once rendered; the drawing below shows meanwhile (and when a part is unknown)
+	const partNo = $derived(part ?? (size ? (plate ? PLATES[size] : LIBRARY[size]) : null));
+	let img = $state<{ src: string; w: number; h: number } | null>(null);
+	$effect(() => {
+		img = null;
+		if (!partNo || typeof document === 'undefined') return;
+		const colourId = PALETTE.find((c) => c.hex.toLowerCase() === hex.toLowerCase())?.id;
+		let live = true;
+		partIcon(partNo, hex, px * 1.6, colourId).then((r) => { if (live) img = r; });
+		return () => { live = false; };
+	});
 	const dark = $derived.by(() => {
 		const n = parseInt(hex.replace('#', ''), 16);
 		return ((n >> 16) & 255) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11 < 60;
 	});
 </script>
 
+{#if img}
+	<img class="ldraw" src={img.src} width={img.w} height={img.h} alt="" aria-hidden="true" />
+{:else}
 <svg width={cols * px + 2} height={(rows * 10 + side) * px / 10 + 2} viewBox="-1 -1 {cols * 10 + 2} {rows * 10 + side + 2}" aria-hidden="true">
 	<rect x="0" y={rows * 10 - 2} width={cols * 10} height={side + 2} rx="1.4" fill={hex} stroke={dark ? '#555' : 'rgba(0,0,0,.35)'} stroke-width="0.6" />
 	<rect x="0" y={rows * 10 - 2} width={cols * 10} height={side + 2} rx="1.4" fill="rgba(0,0,0,.18)" />
@@ -41,3 +56,8 @@
 		{/each}
 	{/if}
 </svg>
+{/if}
+
+<style>
+	.ldraw { display: inline-block; vertical-align: middle; }
+</style>

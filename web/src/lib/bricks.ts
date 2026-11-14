@@ -79,22 +79,30 @@ export type PartKind = 'brick' | 'plate' | 's45' | 's33' | 'tile';
 const KINDS: [PartKind, Record<string, string>][] = [
 	['brick', LIBRARY], ['plate', PLATES], ['s45', SLOPES45], ['s33', SLOPES33], ['tile', TILES]
 ];
+/** Other numbers for the same part (newer/older moulds, Rebrickable numbering) → the number we use. */
+export const PART_ALIASES: Record<string, string> = {
+	'3069b': '3069', '3069a': '3069', '3070b': '3070', '3070a': '3070', '3068b': '3068', '3068a': '3068',
+	'3040b': '3040', '3040a': '3040', '3039a': '3039', '3001a': '3001', '3003a': '3003', '3004a': '3004',
+	'6141': '4073', '4032a': '4032', '4032b': '4032', '3747a': '3747b', '3062a': '3062b', '3665a': '3665', '3665b': '3665',
+	'3660a': '3660', '3660b': '3660', '3942a': '3942c', '3942b': '3942c', '6014a': '6014b', '2431a': '2431', '4162a': '4162'
+};
+export const canonPart = (p: string) => PART_ALIASES[p] ?? p;
 const PART_INDEX = new Map<string, { size: string; kind: PartKind }>();
 for (const [kind, table] of KINDS) for (const [size, part] of Object.entries(table)) PART_INDEX.set(part, { size, kind });
 /** Size and kind of any simple part we know. `plate` = a third of a brick high (plates and tiles). */
 export function partInfo(part: string): { size: string; plate: boolean; kind: PartKind } | null {
-	const i = PART_INDEX.get(part);
+	const i = PART_INDEX.get(canonPart(part));
 	return i ? { ...i, plate: i.kind === 'plate' || i.kind === 'tile' } : null;
 }
 const KIND_LABEL: Record<PartKind, string> = { brick: 'Steen', plate: 'Plaat', s45: 'Dakpan 45°', s33: 'Dakpan 33°', tile: 'Tegel' };
 export function partLabel(part: string, fallback?: string): string {
 	const i = partInfo(part);
-	return i ? `${KIND_LABEL[i.kind]} ${i.size}` : SPECIAL_PART_NAMES[part] ?? fallback ?? part;
+	return i ? `${KIND_LABEL[i.kind]} ${i.size}` : SPECIAL_PART_NAMES[canonPart(part)] ?? fallback ?? part;
 }
 /** Key used for "which sizes do we own": '2x4' brick, 'p2x4' plate, 's452x2' slope, 't1x2' tile. */
 export function stockKey(part: string): string | null {
 	const i = partInfo(part);
-	if (!i) return SPECIAL_PART_NAMES[part] ? 'x' + part : null;
+	if (!i) return SPECIAL_PART_NAMES[canonPart(part)] ? 'x' + canonPart(part) : null;
 	return ({ brick: '', plate: 'p', s45: 's45', s33: 's33', tile: 't' } as const)[i.kind] + i.size;
 }
 

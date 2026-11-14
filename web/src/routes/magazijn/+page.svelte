@@ -71,6 +71,7 @@
 	<div class="title">
 		<h1>Magazijn</h1>
 		<a class="scan primary" href="/magazijn/scan">📷 Stenen scannen</a>
+		<a class="scan" href="/onderdelen">Onderdelen</a>
 	</div>
 	<p class="muted">{totals.all} onderdelen in huis, waarvan <b>{totals.loose}</b> stenen en platen die de ontwerper kan gebruiken.</p>
 
@@ -126,7 +127,7 @@
 			<ul class="parts">
 				{#each shown as l (l.part + '/' + l.color)}
 					<li class:gone={l.available === 0}>
-						{#if l.size}<PartIcon part={l.part} hex={l.hex} px={10} />{:else if l.img}<img src={l.img} alt="" />{:else}<span class="sw" style:background={l.hex}></span>{/if}
+						{#if l.part}<PartIcon part={l.part} hex={l.hex} px={10} />{:else if l.img}<img src={l.img} alt="" />{:else}<span class="sw" style:background={l.hex}></span>{/if}
 						<div class="pinfo">
 							<span>{l.name}</span>
 							<small class="muted"><span class="dotc" style:background={l.hex}></span>{l.colorName}

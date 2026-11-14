@@ -1,5 +1,5 @@
 <script lang="ts">
-	import BrickCatch from '#lib/components/BrickCatch.svelte';
+	import WaitGame from '#lib/components/WaitGame.svelte';
 	import { piecesFromParams } from '#lib/size.ts';
 	import { page } from '$app/state';
 	import { goto, replaceState } from '$app/navigation';
@@ -305,7 +305,7 @@
 		<div class="view card">
 			<Viewer bind:scene />
 			{#if gameKey}
-				{#key gameKey}<BrickCatch active={waiting} />{/key}
+				{#key gameKey}<WaitGame active={waiting} />{/key}
 			{/if}
 			{#if phase !== 'done' && phase !== 'idle'}
 				<div class="status" class:err={phase === 'error'}>
