@@ -113,6 +113,14 @@ def _specials_of(p, D):
 
 def program_to_grid(prog, with_specials=False):
     parts = [dict(p) for p in prog["parts"] if isinstance(p, dict)]
+    for p in parts:  # forms Gemini sometimes uses instead of the agreed ones
+        op = str(p.get("op", "box")).lower()
+        if op in ("cut", "hole", "remove", "subtract"):
+            p["op"], p["cut"] = "box", True
+        elif op in ("cube", "block", "brick", "cuboid", "rect"):
+            p["op"] = "box"
+        elif op in ("ramp", "slope"):
+            p["op"] = "wedge"
     # overhangs may start below 0: shift everything so the grid starts at 0
     def lo(p, k):
         r = float(p.get("r", 0)) if p.get("op") == "cylinder" and p.get("axis", "z") != k else 0
@@ -245,6 +253,16 @@ def scale_program(prog, f):
             continue
         q = dict(p)
         op = q.get("op", "box")
+        if op == "wheels" and f >= 1.8:
+            # real LEGO wheels would look tiny on a model this much bigger: build them from bricks instead
+            big = str(q.get("size", "small")).startswith("l")
+            r = (1.25 if big else 0.9) * f
+            cx = (float(q.get("x", 0)) + (1.5 if big else 1)) * f
+            out.append({"op": "cylinder", "axis": "y", "x": round(cx * 2) / 2, "y": -0.5, "z": round(r * 2.5),
+                        "r": round(r * 2) / 2, "len": max(1, round(0.6 * f)), "color": "black", "mirror": True})
+            out.append({"op": "cylinder", "axis": "y", "x": round(cx * 2) / 2, "y": -0.5, "z": round(r * 2.5),
+                        "r": max(0.5, round(r * 0.9)) / 2, "len": 1, "color": "light_grey", "mirror": True})
+            continue
         if op in SPECIAL_OPS:
             for k in ("x", "y"):
                 if k in q:
