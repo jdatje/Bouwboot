@@ -9,13 +9,19 @@ Parts are applied in order, later parts overwrite earlier ones. Any part may hav
 import json
 import os
 import numpy as np
+import shape3d
 from shape3d import support, hollow, tile_plates
 
 # special pieces (wheels, windows, round pieces, arches, curved and inverted slopes): shared with the web app
 _SPEC_FILE = next((f for f in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "src", "lib", "specials.json"),
                                os.path.join(os.path.dirname(os.path.abspath(__file__)), "specials.json")) if os.path.exists(f)), None)
 SPECIALS = {k: v for k, v in json.load(open(_SPEC_FILE)).items() if not k.startswith("_")} if _SPEC_FILE else {}
-SPECIAL_OPS = {"wheels", "window", "door", "arch", "cone", "dish", "curve"}
+SPECIAL_OPS = {"wheels", "window", "door", "arch", "cone", "dish", "curve", "piece"}
+CORNER_CAL = {"corner_empty", "corner_low"}
+shape3d.CORNER_SPECIALS.update(k for k, v in SPECIALS.items() if v.get("cal") in CORNER_CAL)
+TEXTURES = {"logs": 1, "log": 1, "masonry": 2, "bricks": 2, "stone": 2, "grille": 3, "vent": 3, "headlight": 4, "headlights": 4}
+TEX_PIECE = {1: "tex_logs", 2: "tex_masonry", 3: "tex_grille", 4: "tex_headlight"}
+CORNER_DIR = {"+x+y": 0, "-x-y": 1, "-x+y": 2, "+x-y": 3}
 DIR = {"+x": 0, "-x": 1, "+y": 2, "-y": 3}
 
 COLORS = [("white", 15, "#F4F4F4"), ("black", 0, "#1B2A34"), ("light_grey", 71, "#A0A5A9"), ("dark_grey", 72, "#6C6E68"),
@@ -103,6 +109,20 @@ def _specials_of(p, D):
         put(sid, n, n)
     elif op == "dish":
         put("dish_2", 2, 2)
+    elif op == "piece":
+        sid = str(p.get("name", ""))
+        sp = SPECIALS.get(sid)
+        if not sp or sp.get("auto"):
+            return []
+        h0, w0, _ = sp["foot"]
+        dr = str(p.get("dir", p.get("along", p.get("down", "")))).replace(" ", "").lower()
+        if sp.get("cal") in CORNER_CAL:
+            d = CORNER_DIR.get(dr, CORNER_DIR.get(dr[2:] + dr[:2], 0))
+        elif sp.get("cal") == "long":
+            d = 2 if dr in ("y", "+y", "-y") else 0
+        else:
+            d = DIR.get(dr, 0)
+        put(sid, h0, w0, d) if d < 2 else put(sid, w0, h0, d)
     elif op == "curve":
         sid = "curve_2" if int(p.get("w", 1)) >= 2 else "curve_1"
         wd = SPECIALS[sid]["foot"][1]
@@ -142,12 +162,18 @@ def program_to_grid(prog, with_specials=False):
         p["x"] = float(p.get("x", 0)) + sx
         p["y"] = float(p.get("y", 0)) + sy
         p["z"] = max(0.0, float(p.get("z", 0))) if p.get("op") != "cylinder" or p.get("axis", "z") == "z" else float(p.get("z", 0))
-    X = int(min(MAX[0], max(np.ceil(p.get("x", 0) + p.get("w", p.get("len", p.get("r", 0)))) for p in parts) + 2))
-    Y = int(min(MAX[1], max(np.ceil(p.get("y", 0) + p.get("d", p.get("len", p.get("r", 0)))) for p in parts) + 2))
-    Z = int(min(MAX[2], max(np.ceil(p.get("z", 0) + p.get("h", p.get("r", 0) * 2.5)) for p in parts) + 2))
+    X = int(min(MAX[0], max(np.ceil(p.get("x", 0) + (12 if p.get("op") in SPECIAL_OPS else p.get("w", p.get("len", p.get("r", 0))))) for p in parts) + 2))
+    Y = int(min(MAX[1], max(np.ceil(p.get("y", 0) + (12 if p.get("op") in SPECIAL_OPS else p.get("d", p.get("len", p.get("r", 0))))) for p in parts) + 2))
+    def top(p):  # highest plate a part reaches (special pieces have their own height)
+        if p.get("op") in SPECIAL_OPS:
+            sp = SPECIALS.get(str(p.get("name", ""))) if p.get("op") == "piece" else None
+            return float(p.get("z", 0)) + (sp["foot"][2] if sp else 18)
+        return float(p.get("z", 0)) + float(p.get("h", float(p.get("r", 0)) * 2.5))
+    Z = int(min(MAX[2], max(np.ceil(top(p)) for p in parts) + 2))
     D = float(prog.get("size", {}).get("d", Y - 2 - 2 * sy)) + 2 * sy
     vox = np.zeros((X, Y, Z), bool)
     lab = np.zeros((X, Y, Z), int)
+    tex = np.zeros((X, Y, Z), np.int8)  # wall textures: logs, masonry, grille, headlight
     specials = []  # (id, x, y, z, h, w, ht, d, colour label)
     for p in parts:
         todo = [p]
@@ -168,8 +194,9 @@ def program_to_grid(prog, with_specials=False):
             colour = NAME.get(str(q.get("color", "light_grey")).lower().replace(" ", "_"), NAME["light_grey"])
             sp = _specials_of(q, D) if SPECIALS and (q.get("op") in SPECIAL_OPS or q.get("op") == "cylinder") else []
             if sp:
-                if q is not p and q.get("op") in ("curve",):  # mirrored curve faces the other way
-                    sp = [(a, b, c, d_, e, f, g, {2: 3, 3: 2}.get(h_, h_)) for a, b, c, d_, e, f, g, h_ in sp]
+                if q is not p and q.get("op") in ("curve", "piece"):  # mirrored front-to-back: turn the direction over
+                    sp = [(a, b, c, d_, e, f, g, ({0: 3, 3: 0, 1: 2, 2: 1} if SPECIALS[a].get("cal") in CORNER_CAL else {2: 3, 3: 2}).get(h_, h_))
+                          for a, b, c, d_, e, f, g, h_ in sp]
                 for t in sp:
                     sid, x0, y0, z0, h, w, ht, d = t
                     if q is not p and q.get("op") != "wheels":  # mirrored copy: y from the other side
@@ -188,13 +215,29 @@ def program_to_grid(prog, with_specials=False):
                 continue
             if q.get("cut"):
                 vox &= ~m
+                tex[m] = 0
             else:
                 vox |= m
                 lab[m] = colour
+                tex[m] = TEXTURES.get(str(q.get("texture", "")).lower(), 0)
     # a special piece wins over shape parts that came after it (a later box must not swallow a window)
     for sid, x0, y0, z0, h, w, ht, d, colour in specials:
         vox[x0:x0 + h, y0:y0 + w, z0:z0 + ht] = True
         lab[x0:x0 + h, y0:y0 + w, z0:z0 + ht] = colour
+    # headlight cells become headlight bricks right away (the brick step would merge them into bigger bricks),
+    # facing the open side
+    if (tex == 4).any() and "tex_headlight" in SPECIALS:
+        for x, y in {(int(a), int(b_)) for a, b_ in np.argwhere((tex == 4).any(2))}:
+            zs = np.flatnonzero(tex[x, y] == 4)
+            z = int(zs.min())
+            while z + 3 <= Z and (tex[x, y, z:z + 3] == 4).all():
+                mid = z + 1
+                free = [(0, x + 1 >= X or not vox[x + 1, y, mid]), (1, x - 1 < 0 or not vox[x - 1, y, mid]),
+                        (2, y + 1 >= Y or not vox[x, y + 1, mid]), (3, y - 1 < 0 or not vox[x, y - 1, mid])]
+                d = next((d_ for d_, f in free if f), 0)
+                specials.append(("tex_headlight", x, y, z, 1, 1, 3, d, int(lab[x, y, z])))
+                tex[x, y, z:z + 3] = 0
+                z += 3
     # a wheel set lower than the chassis above it gets a block in between (holder up to the body),
     # otherwise the body would hang loose and be propped up all the way to the ground
     for sid, x0, y0, z0, h, w, ht, d, colour in specials:
@@ -220,13 +263,14 @@ def program_to_grid(prog, with_specials=False):
     # the site's camera looks at the high-y side: turn the model so its front (y=0) faces the viewer
     v = np.ascontiguousarray(vox[lo[0]:hi[0], lo[1]:hi[1], :hi[2]][::-1, ::-1])
     l = np.ascontiguousarray(lab[lo[0]:hi[0], lo[1]:hi[1], :hi[2]][::-1, ::-1])
+    t = np.ascontiguousarray(tex[lo[0]:hi[0], lo[1]:hi[1], :hi[2]][::-1, ::-1])
     if not with_specials:
         return v, l
     Xt, Yt = v.shape[0], v.shape[1]
     turn = {0: 1, 1: 0, 2: 3, 3: 2}
     sp = [(sid, Xt - (x0 - lo[0]) - h, Yt - (y0 - lo[1]) - w, z0, h, w, ht, turn[d], c)
           for sid, x0, y0, z0, h, w, ht, d, c in specials]
-    return v, l, sp
+    return v, l, sp, t
 
 
 def _owned(sid, sizes):
@@ -238,7 +282,7 @@ def _owned(sid, sizes):
 
 
 def program_to_bricks(prog, sizes=None, slopes=True, hollow_inside=True):
-    vox, lab, specials = program_to_grid(prog, with_specials=True)
+    vox, lab, specials, tex = program_to_grid(prog, with_specials=True)
     vox, lab = support(vox, lab)
     if hollow_inside:
         vox = hollow(vox)
@@ -247,7 +291,128 @@ def program_to_bricks(prog, sizes=None, slopes=True, hollow_inside=True):
     # specials we can't use (not in stock) simply become ordinary bricks
     sp = [(h, w, x0, y0, z0, ht, c, "x:" + sid, d) for sid, x0, y0, z0, h, w, ht, d, c in specials if _owned(sid, sizes)]
     inverted = {n for n in ("inv45_1", "inv45_2", "inv33_2") if n in SPECIALS and _owned(n, sizes)}
-    return tile_plates(vox, lab, PALETTE, sizes, slopes, sp, inverted)
+    out = tile_plates(vox, lab, PALETTE, sizes, slopes, sp, inverted)
+    return finish(out, vox, tex, sizes)
+
+
+def _plain(b):
+    return "s" not in b and "k" not in b and "p" not in b
+
+
+def finish(out, vox, tex, sizes=None):
+    """Last touches on the tiled bricks: textured wall bricks, tall bricks from stacks, corner pieces from L's."""
+    X, Y, Z = vox.shape
+    ok = {sid: _owned(sid, sizes) for sid in SPECIALS}
+    # 0) in a textured wall, long bricks become 1x2's (offset every other layer, like a real brick bond),
+    #    and for headlights 1x1's, so the textured pieces can go in
+    split = []
+    for b in out:
+        if not _plain(b) or min(b["h"], b["w"]) != 1 or max(b["h"], b["w"]) < 2:
+            split.append(b); continue
+        z0 = int(round(b["z"] * 3))
+        t = tex[b["x"]:b["x"] + b["h"], b["y"]:b["y"] + b["w"], z0:z0 + 3]
+        code = int(t.flat[0]) if t.size and (t == t.flat[0]).all() else 0
+        sid = TEX_PIECE.get(code)
+        n = max(b["h"], b["w"])
+        if not sid or not ok.get(sid) or (code != 4 and n == 2):
+            split.append(b); continue
+        along_x = b["h"] > 1
+        sizes_ = [1] * n if code == 4 else ([1] if (z0 // 3) % 2 else []) + [2] * ((n - ((z0 // 3) % 2)) // 2)
+        sizes_ += [1] * (n - sum(sizes_))
+        pos = 0
+        for m in sizes_:
+            nb = dict(b)
+            if along_x:
+                nb["x"], nb["h"] = b["x"] + pos, m
+            else:
+                nb["y"], nb["w"] = b["y"] + pos, m
+            split.append(nb)
+            pos += m
+    out = split
+    # 1) textures: 1x2 bricks in a wall marked logs/masonry/grille, 1x1 bricks marked headlight
+    for b in out:
+        if not _plain(b):
+            continue
+        z0 = int(round(b["z"] * 3))
+        t = tex[b["x"]:b["x"] + b["h"], b["y"]:b["y"] + b["w"], z0:z0 + 3]
+        if t.size == 0 or not (t == t.flat[0]).all() or t.flat[0] == 0:
+            continue
+        sid = TEX_PIECE.get(int(t.flat[0]))
+        if not sid or not ok.get(sid):
+            continue
+        if sid == "tex_headlight" and b["h"] == 1 and b["w"] == 1:
+            x, y = b["x"], b["y"]
+            mid = min(Z - 1, z0 + 1)
+            free = [(0, x + 1 >= X or not vox[x + 1, y, mid]), (1, x - 1 < 0 or not vox[x - 1, y, mid]),
+                    (2, y + 1 >= Y or not vox[x, y + 1, mid]), (3, y - 1 < 0 or not vox[x, y - 1, mid])]
+            d = next((d for d, f in free if f), None)
+            if d is not None:
+                b["s"], b["d"] = sid, d
+        elif sid != "tex_headlight" and {b["h"], b["w"]} == {1, 2}:
+            b["s"], b["d"] = sid, 0 if b["h"] == 2 else 2
+    # 2) tall bricks: plain 1x2 / 1x1 bricks of one colour stacked exactly on top of each other
+    cols = {}
+    for i, b in enumerate(out):
+        if _plain(b) and {b["h"], b["w"]} in ({1, 2}, {1}):
+            cols.setdefault((b["x"], b["y"], b["h"], b["w"], b["c"]), []).append(i)
+    drop = set()
+    for (x, y, h, w, c), idx in cols.items():
+        idx.sort(key=lambda i: out[i]["z"])
+        run = [idx[0]]
+        runs = []
+        for i in idx[1:]:
+            if abs(out[i]["z"] - out[run[-1]]["z"] - 1) < 1e-6:
+                run.append(i)
+            else:
+                runs.append(run); run = [i]
+        runs.append(run)
+        options = [(5, "brick_1x2x5"), (2, "brick_1x2x2")] if h * w == 2 else [(5, "brick_1x1x5"), (3, "brick_1x1x3")]
+        for run in runs:
+            k = 0
+            while k < len(run):
+                for n, sid in options:
+                    if ok.get(sid) and len(run) - k >= n:
+                        first = out[run[k]]
+                        first["s"], first["d"] = sid, (0 if first["h"] >= first["w"] else 2)
+                        drop.update(run[k + 1:k + n])
+                        k += n
+                        break
+                else:
+                    k += 1
+    out = [b for i, b in enumerate(out) if i not in drop]
+    # 3) corners: a 1x2 and a 1x1 of the same colour and kind that together form an L
+    def kind(b):
+        return "brick" if _plain(b) else "plate" if b.get("p") and "k" not in b and "s" not in b else "tile" if b.get("k") == "t" else None
+    piece = {"brick": "corner_brick", "plate": "corner_plate", "tile": "corner_tile"}
+    ones = {}
+    for i, b in enumerate(out):
+        if kind(b) and b["h"] == 1 and b["w"] == 1:
+            ones[(b["x"], b["y"], round(b["z"] * 3), b["c"], kind(b))] = i
+    used = set()
+    for i, b in enumerate(out):
+        kd = kind(b)
+        if not kd or i in used or {b["h"], b["w"]} != {1, 2} or not ok.get(piece[kd]):
+            continue
+        z3 = round(b["z"] * 3)
+        cells = [(b["x"] + a, b["y"] + c_) for a in range(b["h"]) for c_ in range(b["w"])]
+        cand = [(b["x"] + dx, b["y"] + dy) for dx, dy in ((0, 1), (1, 1), (0, -1), (1, -1))] if b["h"] == 2 else \
+               [(b["x"] + dx, b["y"] + dy) for dx, dy in ((1, 0), (1, 1), (-1, 0), (-1, 1))]
+        for (qx, qy) in cand:
+            j = ones.get((qx, qy, z3, b["c"], kd))
+            if j is None or j in used:
+                continue
+            allc = cells + [(qx, qy)]
+            bx, by = min(c_[0] for c_ in allc), min(c_[1] for c_ in allc)
+            missing = [(bx + a, by + c_) for a in (0, 1) for c_ in (0, 1) if (bx + a, by + c_) not in allc]
+            if len(missing) != 1:
+                continue
+            mx, my = missing[0][0] - bx, missing[0][1] - by
+            d = {(1, 1): 0, (0, 0): 1, (0, 1): 2, (1, 0): 3}[(mx, my)]
+            b.update({"x": bx, "y": by, "h": 2, "w": 2, "s": piece[kd], "d": d})
+            b.pop("p", None); b.pop("k", None)
+            used.update((i, j))
+            break
+    return [b for i, b in enumerate(out) if not (i in used and "s" not in b)]
 
 
 def parse_sizes(items):
@@ -361,3 +526,13 @@ def program_to_target(prog, target, sizes=None, max_scale=3.5):
         else:
             hi = mid
     return best
+
+
+def piece_list():
+    """The extra pieces for the designer's instructions, from the catalogue (entries with a 'use')."""
+    lines = []
+    for k, v in SPECIALS.items():
+        if v.get("use") and not v.get("auto"):
+            l, w, h = v["foot"]
+            lines.append(f'  - "{k}": {l}x{w}, {h} plates high. {v["use"]}')
+    return "\n".join(lines)

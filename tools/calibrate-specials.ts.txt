@@ -1,0 +1,48 @@
+import { readFileSync, writeFileSync } from 'node:fs';
+import { partMesh } from './src/lib/server/ldraw.ts';
+const file = 'src/lib/specials.json';
+const data = JSON.parse(readFileSync(file, 'utf8'));
+for (const [id, sp] of Object.entries<any>(data)) {
+	if (id.startsWith('_') || !sp.cal || sp.r0 !== undefined && !sp.recal) continue;
+	const m = partMesh(sp.ldraw[0].f)!;
+	const tris: number[][][] = [];
+	for (const g of m.groups) for (let i = 0; i < g.pos.length; i += 9) tris.push([0, 3, 6].map((o) => [g.pos[i + o] / 20, -g.pos[i + o + 1] / 20, -g.pos[i + o + 2] / 20]));
+	const score: number[] = [];
+	for (let r = 0; r < 4; r++) {
+		const a = (r * Math.PI) / 2, c = Math.cos(a), s = Math.sin(a);
+		const pts: number[][] = [];
+		for (const t of tris) {
+			const q = t.map(([x, y, z]) => [x * c + z * s, y, -x * s + z * c]);
+			const cen = [0, 1, 2].map((k) => (q[0][k] + q[1][k] + q[2][k]) / 3);
+			pts.push(...q, cen, ...[0, 1, 2].map((k) => q[k].map((v, j) => (v + q[(k + 1) % 3][j]) / 2)));
+		}
+		const xs = pts.map((p) => p[0]), zs = pts.map((p) => p[2]);
+		const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+		const ex = Math.max(...xs) - Math.min(...xs), ez = Math.max(...zs) - Math.min(...zs);
+		// top height map on a fine grid
+		const N = 8, cells = new Map<string, number>();
+		for (const [x, y, z] of pts) {
+			const k = `${Math.floor((x - cx) * N)},${Math.floor((z - cz) * N)}`;
+			cells.set(k, Math.max(cells.get(k) ?? -1e9, y));
+		}
+		const sel = (f: (x: number, z: number) => boolean) => [...cells.entries()].filter(([k]) => { const [i, j] = k.split(',').map(Number); return f((i + 0.5) / N, (j + 0.5) / N); }).map(([, h]) => h);
+		const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0);
+		const L = sel((x) => x < -0.1), R = sel((x) => x > 0.1);
+		const q = sel((x, z) => x > 0.15 && z > 0.15), others = [sel((x, z) => x < -0.15 && z > 0.15), sel((x, z) => x < -0.15 && z < -0.15), sel((x, z) => x > 0.15 && z < -0.15)];
+		let sc = 0;
+		switch (sp.cal) {
+			case 'long': sc = ex - ez + (r === 0 ? 0.01 : 0) - r * 0.001; break;
+			case 'slope': sc = (mean(L) - mean(R)) + (Math.abs(ex - sp.foot[0]) < 0.3 && Math.abs(ez - sp.foot[1]) < 0.3 ? 100 : 0); break;
+			case 'edge': sc = L.length - R.length; break;
+			case 'corner_empty': sc = mean(others.map((o) => o.length)) - q.length; break;
+			case 'corner_low': sc = mean(others.map(mean)) - mean(q); break;
+			case 'face': { const vR = pts.filter((p) => p[0] > cx + 0.3).length, vL = pts.filter((p) => p[0] < cx - 0.3).length; sc = vR - vL; break; }
+		}
+		score.push(sc);
+	}
+	const best = score.indexOf(Math.max(...score));
+	const r0 = best === 3 ? -1 : best;
+	sp.r0 = r0;
+	console.log(id.padEnd(16), sp.cal.padEnd(13), 'r0', r0, score.map((x) => x.toFixed(2)).join(' '));
+}
+writeFileSync(file, JSON.stringify(data, null, '\t') + '\n');

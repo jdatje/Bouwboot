@@ -10,12 +10,13 @@ import numpy as np
 # bricks and plates (short side, long side) that are easy to get, biggest first
 SIZES = sorted([(2, 10), (2, 8), (2, 6), (2, 4), (2, 3), (2, 2), (1, 12), (1, 10), (1, 8), (1, 6), (1, 4),
                 (1, 3), (1, 2), (1, 1)], key=lambda s: -s[0] * s[1])
-PLATE_SIZES = sorted([(6, 8), (6, 6), (4, 8), (4, 6), (4, 4), (2, 10), (2, 8), (2, 6), (2, 4), (2, 3), (2, 2),
-                      (1, 8), (1, 6), (1, 4), (1, 3), (1, 2), (1, 1)], key=lambda s: -s[0] * s[1])
+PLATE_SIZES = sorted([(6, 10), (4, 12), (4, 10), (6, 8), (6, 6), (4, 8), (4, 6), (4, 4), (3, 3), (2, 16), (2, 12), (2, 10),
+                      (2, 8), (2, 6), (2, 4), (2, 3), (2, 2), (1, 12), (1, 10), (1, 8), (1, 6), (1, 5), (1, 4), (1, 3), (1, 2),
+                      (1, 1)], key=lambda s: -s[0] * s[1])
 # slopes: (depth, width) — depth runs down the slope. 45°: 2 deep; 33°: 3 deep
-SLOPES = {"s33": [(3, 2), (3, 1)], "s45": [(2, 4), (2, 2), (2, 1)]}
+SLOPES = {"s33": [(3, 4), (3, 2), (3, 1)], "s45": [(2, 4), (2, 2), (2, 1)]}
 # tiles (smooth plates) only go where nothing sits on top
-TILE_SIZES = {(1, 1), (1, 2), (1, 3), (1, 4), (1, 6), (1, 8), (2, 2), (2, 4)}
+TILE_SIZES = {(1, 1), (1, 2), (1, 3), (1, 4), (1, 6), (1, 8), (2, 2), (2, 3), (2, 4), (2, 6)}
 DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]  # index = slope direction (downhill)
 LAYER = 1.2  # brick height in studs
 PLATE = 0.4  # plate height in studs
@@ -332,6 +333,8 @@ def place_slopes(vox, lab, owner, k, pieces, sizes, use_slopes, slope_sizes=None
 
 
 INV_SLOPES = {"s45": [(2, 2), (2, 1)], "s33": [(3, 2)]}
+# special pieces whose direction is a corner (d=0: +x+y). Mirroring them in x swaps corners differently.
+CORNER_SPECIALS = set()
 INV_NAME = {("s45", 2): "inv45_2", ("s45", 1): "inv45_1", ("s33", 2): "inv33_2"}
 
 
@@ -509,11 +512,15 @@ def tile_plates(vox, lab, palette, sizes=None, slopes=True, specials=(), inverte
     for flip in flips:
         v = vox[::-1] if flip else vox
         l = lab[::-1] if flip else lab
-        sp = [(h, w, X - x - h, y, z, ht, c, k, fl[d]) for h, w, x, y, z, ht, c, k, d in specials] if flip else list(specials)
+        flc = {0: 2, 2: 0, 1: 3, 3: 1}
+        sp = [(h, w, X - x - h, y, z, ht, c, k, flc[d] if k[2:] in CORNER_SPECIALS else fl[d])
+              for h, w, x, y, z, ht, c, k, d in specials] if flip else list(specials)
         pieces, owner = brickify_plates(v, l, sizes, slopes, sp, inverted)
         kept = keep_grounded_pieces(pieces, owner)
         if flip:
-            kept = [(h, w, X - x - h, y, z, ht, c, k, fl[d] if k.startswith("s") or k.startswith("x:") else d)
+            flc = {0: 2, 2: 0, 1: 3, 3: 1}
+            kept = [(h, w, X - x - h, y, z, ht, c, k,
+                     flc[d] if k[2:] in CORNER_SPECIALS else fl[d] if k.startswith("s") or k.startswith("x:") else d)
                     for h, w, x, y, z, ht, c, k, d in kept]
         if best is None or len(kept) > len(best):
             best = kept

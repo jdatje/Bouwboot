@@ -42,6 +42,16 @@ SPECIAL LEGO PIECES (real LEGO parts: use them, they make the model look much be
   for headlights (trans_clear/yellow), tail lights (trans_red), siren lights (trans_blue/red), glass, water, fire.
 - Inverted slopes are added automatically under overhangs; you don't place them.
 
+MORE LEGO PIECES: {"op":"piece","name":"<name>","x":3,"y":0,"z":9,"dir":"+x","color":"red"}
+  x,y = corner of the piece's footprint, z = bottom (plates). Footprint "LxW" is for dir +x / "x" (it turns with dir).
+  "dir": for slopes and curves the LOW side (+x,-x,+y,-y); for corner pieces the special corner (+x+y, -x+y, ...);
+  for long pieces just "x" or "y". Use them for details: they make models look much more like real LEGO sets.
+__PIECE_LIST__
+
+WALL TEXTURES: add "texture" to a box to build its walls from textured bricks: "logs" (log cabins, forts, rafts,
+  tree trunks), "masonry" (castle and stone walls, chimneys), "grille" (machines, vents, radiators), "headlight"
+  (on 1x1 spots in a front face: headlights, lamps; use with a trans or white colour).
+
 - Any part can have "cut": true -> it REMOVES material instead (window and door openings, garage doors, the inside
   of a boat, the space under an arch). No color needed.
 - Any part can have "mirror": true -> it is also applied mirrored front-to-back (across y = size.d/2). Use it for

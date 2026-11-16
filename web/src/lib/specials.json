@@ -1,5 +1,5 @@
 {
-	"_doc": "Special pieces the designer can use (groups 1-4). foot = [length along x, depth along y, height in plates] in the d=0 orientation. ldraw = LDraw files that draw it (at = offset in LDU, ry = quarter turns about the vertical axis, rx = quarter turns about x, c = colour: 'main' or a colour id). r0 = quarter turns that bring the LDraw drawing into the d=0 orientation; d adds more quarter turns. buy = real parts (BrickLink numbers) with colour and quantity. down = which side is low for slopes at d=0. Slopes at d=0: high side at -x, low side at +x. Inverted slopes at d=0: full width on top, the slanted underside faces +x (the top sticks out over +x).",
+	"_doc": "Special pieces the designer can use (groups 1-4). foot = [length along x, depth along y, height in plates] in the d=0 orientation. ldraw = LDraw files that draw it (at = offset in LDU, ry = quarter turns about the vertical axis, rx = quarter turns about x, c = colour: 'main' or a colour id). r0 = quarter turns that bring the LDraw drawing into the d=0 orientation; d adds more quarter turns. buy = real parts (BrickLink numbers) with colour and quantity. down = which side is low for slopes at d=0. Slopes at d=0: high side at -x, low side at +x. Inverted slopes at d=0: full width on top, the slanted underside faces +x (the top sticks out over +x). cal = how the rotation (r0) is measured automatically. auto = placed by the brick step itself (tall / corner / texture). use = description for the designer (Gemini places these with op 'piece').",
 	"wheels_s": {
 		"name": "Wielen klein",
 		"group": 1,
@@ -786,5 +786,961 @@
 				"q": 2
 			}
 		]
+	},
+	"brick_1x2x2": {
+		"name": "Steen 1x2x2",
+		"foot": [
+			2,
+			1,
+			6
+		],
+		"cal": "long",
+		"auto": "tall",
+		"ldraw": [
+			{
+				"f": "3245c",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3245c",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"brick_1x2x5": {
+		"name": "Steen 1x2x5",
+		"foot": [
+			2,
+			1,
+			15
+		],
+		"cal": "long",
+		"auto": "tall",
+		"ldraw": [
+			{
+				"f": "2454b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2454b",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"brick_1x1x3": {
+		"name": "Steen 1x1x3",
+		"foot": [
+			1,
+			1,
+			9
+		],
+		"auto": "tall",
+		"ldraw": [
+			{
+				"f": "14716",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "14716",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"brick_1x1x5": {
+		"name": "Steen 1x1x5",
+		"foot": [
+			1,
+			1,
+			15
+		],
+		"auto": "tall",
+		"ldraw": [
+			{
+				"f": "2453b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2453b",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"corner_plate": {
+		"name": "Hoekplaat 2x2",
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"cal": "corner_empty",
+		"auto": "corner",
+		"ldraw": [
+			{
+				"f": "2420",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2420",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": -1
+	},
+	"corner_brick": {
+		"name": "Hoeksteen 2x2",
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"cal": "corner_empty",
+		"auto": "corner",
+		"ldraw": [
+			{
+				"f": "2357",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2357",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": -1
+	},
+	"corner_tile": {
+		"name": "Hoektegel 2x2",
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"cal": "corner_empty",
+		"auto": "corner",
+		"ldraw": [
+			{
+				"f": "14719",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "14719",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": -1
+	},
+	"tex_logs": {
+		"name": "Boomstamsteen 1x2",
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"auto": "texture",
+		"ldraw": [
+			{
+				"f": "30136",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "30136",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tex_masonry": {
+		"name": "Steen 1x2 met metselwerk",
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"auto": "texture",
+		"ldraw": [
+			{
+				"f": "98283",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "98283",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tex_grille": {
+		"name": "Steen 1x2 met rooster",
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"auto": "texture",
+		"ldraw": [
+			{
+				"f": "2877",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2877",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tex_headlight": {
+		"name": "Koplampsteen 1x1",
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"auto": "texture",
+		"ldraw": [
+			{
+				"f": "4070",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4070",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"cheese_1": {
+		"name": "Kaasdakpan 1x1",
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "slope",
+		"use": "tiny 1x1 slope, 2 plates high, low side towards dir: noses, beaks, tips, roof edges, ears",
+		"ldraw": [
+			{
+				"f": "54200",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "54200",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"cheese_2": {
+		"name": "Kaasdakpan 1x2",
+		"foot": [
+			1,
+			2,
+			2
+		],
+		"cal": "slope",
+		"use": "small slope 1 deep x 2 wide, 2 plates high, low side towards dir: car bonnets, roof edges, wedges",
+		"ldraw": [
+			{
+				"f": "85984",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "85984",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"grille_slope": {
+		"name": "Dakpan 18° 2x1 met rooster",
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "slope",
+		"use": "2 deep x 1 wide slope with a vent grille, 2 plates high, low side towards dir: engine covers, vents",
+		"ldraw": [
+			{
+				"f": "61409",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "61409",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"pyramid_1": {
+		"name": "Piramidedakpan 1x1",
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"use": "1x1 pointed pyramid cap, 2 plates high: spikes, tower tips, teeth",
+		"ldraw": [
+			{
+				"f": "22388",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "22388",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"tile_round_1": {
+		"name": "Ronde tegel 1x1",
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"use": "smooth round 1x1 tile: eyes, buttons, lights, dots, wheels caps (on top of a surface)",
+		"ldraw": [
+			{
+				"f": "98138",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "98138",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"tile_quarter_1": {
+		"name": "Kwartronde tegel 1x1",
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "corner_empty",
+		"use": "1x1 tile with one rounded corner (the corner towards dir, e.g. \"+x+y\"): rounded corners of tops, ears",
+		"ldraw": [
+			{
+				"f": "25269",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "25269",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tile_half_1": {
+		"name": "Halfronde tegel 1x1",
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "edge",
+		"use": "1x1 tile with a round end towards dir: rounded ends, tongues, petals",
+		"ldraw": [
+			{
+				"f": "24246",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24246",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"tile_dot_1": {
+		"name": "Ronde tegel 1x1 met pin",
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"use": "round 1x1 tile with a little pin: buttons, knobs, lamps",
+		"ldraw": [
+			{
+				"f": "20482",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "20482",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"tile_grille_2": {
+		"name": "Roostertegel 1x2",
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"use": "1x2 grille tile (along \"x\" or \"y\"): radiators, vents, steps, rails",
+		"ldraw": [
+			{
+				"f": "2412b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2412b",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tile_ingot_2": {
+		"name": "Goudstaaf 1x2",
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"use": "1x2 chamfered tile (along \"x\" or \"y\"): gold bars, treasure, trim",
+		"ldraw": [
+			{
+				"f": "99563",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "99563",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"plate_rounded_2": {
+		"name": "Plaat 1x2 met ronde uiteinden",
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"use": "1x2 plate with round ends (along \"x\" or \"y\"): feet, paws, lips, fins",
+		"ldraw": [
+			{
+				"f": "35480",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "35480",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"tile_round_2": {
+		"name": "Ronde tegel 2x2",
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"use": "smooth round 2x2 tile: big eyes, lids, plates, round tops",
+		"ldraw": [
+			{
+				"f": "14769",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "14769",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"tile_triangle_2": {
+		"name": "Driehoekige tegel 2x2",
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"cal": "corner_empty",
+		"use": "2x2 triangular tile, the cut-off corner towards dir (e.g. \"+x+y\"): pointed corners, arrows, wing tips",
+		"ldraw": [
+			{
+				"f": "35787",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "35787",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": -1
+	},
+	"curve_3": {
+		"name": "Gebogen steen 3x1",
+		"foot": [
+			3,
+			1,
+			3
+		],
+		"cal": "slope",
+		"use": "curved slope 3 deep x 1 wide, 3 plates high, curving down towards dir: smooth noses, mudguards, roofs",
+		"ldraw": [
+			{
+				"f": "50950",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "50950",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"curve_4": {
+		"name": "Gebogen steen 4x1",
+		"foot": [
+			4,
+			1,
+			3
+		],
+		"cal": "slope",
+		"use": "long curved slope 4 deep x 1 wide, 3 plates high, down towards dir: long bonnets, sweeping roofs, tails",
+		"ldraw": [
+			{
+				"f": "11153",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11153",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"curve_3x2": {
+		"name": "Gebogen steen 3x2",
+		"foot": [
+			3,
+			2,
+			3
+		],
+		"cal": "slope",
+		"use": "curved slope 3 deep x 2 wide, 3 plates high, down towards dir: car fronts, heads, rounded roofs",
+		"ldraw": [
+			{
+				"f": "24309",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24309",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"curve_2x2_low": {
+		"name": "Gebogen dakpan 2x2 laag",
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"cal": "slope",
+		"use": "low curved slope 2x2 with 2 studs, 2 plates high, down towards dir",
+		"ldraw": [
+			{
+				"f": "47457",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "47457",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"hump_4": {
+		"name": "Dubbel gebogen steen 4x1",
+		"foot": [
+			4,
+			1,
+			2
+		],
+		"cal": "long",
+		"use": "4x1 piece curved down at both ends, 2 plates high (along \"x\" or \"y\"): backs of animals, car roofs, ridges",
+		"ldraw": [
+			{
+				"f": "93273",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "93273",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"hump_1": {
+		"name": "Dubbel gebogen steen 1x1",
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"use": "1x1 piece with a rounded top, 2 plates high: rounded tips, tails, toes",
+		"ldraw": [
+			{
+				"f": "49307",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "49307",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"brick_round_top": {
+		"name": "Steen 1x2 met ronde bovenkant",
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"use": "1x2 brick with a smoothly rounded top (along \"x\" or \"y\"): tops of walls, backs, logs",
+		"ldraw": [
+			{
+				"f": "37352",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "37352",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"antenna": {
+		"name": "Antenne",
+		"foot": [
+			1,
+			1,
+			12
+		],
+		"use": "thin antenna/pole on a 1x1 spot, 12 plates high: radio masts, flag poles, aerials",
+		"ldraw": [
+			{
+				"f": "3957a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3957a",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"bar_4": {
+		"name": "Staaf 4 lang op ronde plaat",
+		"foot": [
+			1,
+			1,
+			11
+		],
+		"use": "round 1x1 plate with a thin bar 10 plates high: wands, lamp posts, poles, fishing rods, masts of small boats",
+		"ldraw": [
+			{
+				"f": "6141",
+				"c": "main"
+			},
+			{
+				"f": "30374",
+				"c": 71,
+				"at": [
+					0,
+					-77,
+					0
+				]
+			}
+		],
+		"buy": [
+			{
+				"p": "4073",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "30374",
+				"c": 71,
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"bar_3": {
+		"name": "Staaf 3 lang op ronde plaat",
+		"foot": [
+			1,
+			1,
+			8
+		],
+		"use": "round 1x1 plate with a thin bar 7 plates high: short poles, handles, candles",
+		"ldraw": [
+			{
+				"f": "6141",
+				"c": "main"
+			},
+			{
+				"f": "87994",
+				"c": 71,
+				"at": [
+					0,
+					-57,
+					0
+				]
+			}
+		],
+		"buy": [
+			{
+				"p": "4073",
+				"c": "main",
+				"q": 1
+			},
+			{
+				"p": "87994",
+				"c": 71,
+				"q": 1
+			}
+		],
+		"group": 6
+	},
+	"fence_4": {
+		"name": "Hek 1x4",
+		"foot": [
+			4,
+			1,
+			3
+		],
+		"cal": "long",
+		"use": "lattice fence 1x4, 3 plates high (along \"x\" or \"y\"): garden fences, railings, balconies",
+		"ldraw": [
+			{
+				"f": "3633",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3633",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"arch_3": {
+		"name": "Boog 1x3x2 rond",
+		"foot": [
+			3,
+			1,
+			6
+		],
+		"cal": "long",
+		"use": "rounded arch 3 long, 6 plates high, with a 1-stud opening (along \"x\" or \"y\"): small windows, doorways, bridges",
+		"ldraw": [
+			{
+				"f": "6005",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "6005",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 1
+	},
+	"roof_corner": {
+		"name": "Hoekdakpan 2x2",
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"cal": "corner_low",
+		"use": "45° roof corner (slopes down on two sides), 3 plates high; dir = the low outer corner, e.g. \"+x+y\": corners of hip roofs",
+		"ldraw": [
+			{
+				"f": "3045",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3045",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6,
+		"r0": 0
+	},
+	"round_plate_4": {
+		"name": "Ronde plaat 4x4",
+		"foot": [
+			4,
+			4,
+			1
+		],
+		"use": "round 4x4 plate: tables, round bases, wheels of carts, platforms, sun",
+		"ldraw": [
+			{
+				"f": "60474",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60474",
+				"c": "main",
+				"q": 1
+			}
+		],
+		"group": 6
 	}
 }

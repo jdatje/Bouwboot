@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { gemini } from '#lib/server/gemini.ts';
 import type { ShapeBrick } from '#lib/server/gpu.ts';
+import SPECIALS from '#lib/specials.json';
 
 /** Direct design: the language model writes a building program in stud coordinates (no drawing,
  *  no 3D model); gpu/direct.py turns that program into bricks, plates, slopes and tiles. */
@@ -42,6 +43,14 @@ export function directAvailable(): Promise<boolean> {
 	return available;
 }
 
+/** The extra pieces for Gemini's instructions, from the catalogue (entries with a 'use'). */
+function pieceList() {
+	return Object.entries(SPECIALS as Record<string, any>)
+		.filter(([k, v]) => !k.startsWith('_') && v.use && !v.auto)
+		.map(([k, v]) => `  - "${k}": ${v.foot[0]}x${v.foot[1]}, ${v.foot[2]} plates high. ${v.use}`)
+		.join('\n');
+}
+
 /** How many parts Gemini should use: more detail for bigger builds (200 pieces ≈ 40 parts, 1400 ≈ 160). */
 const partsFor = (pieces: number) => {
 	const n = Math.max(25, Math.min(180, Math.round(20 + pieces / 10)));
@@ -59,7 +68,8 @@ export async function designProgram(request: string, studs: number, pieces: numb
 	if (!names.length) names = COLOR_NAMES.map(([n]) => n);
 	const spec = readFileSync(path.join(GPU_DIR(), 'direct_prompt.txt'), 'utf8')
 		.replace('__STUDS__', String(studs)).replace('__PIECES__', String(pieces))
-		.replace('__PARTS__', `${partsFor(pieces)}`).replace('__COLORS__', names.join(', '));
+		.replace('__PARTS__', `${partsFor(pieces)}`).replace('__COLORS__', names.join(', '))
+		.replace('__PIECE_LIST__', pieceList());
 	const prog = await gemini<Program>(
 		[{ text: spec + '\n\nDesign: ' + request + (variation > 0 ? `\n(Variation ${variation}: make a clearly different design than the obvious one.)` : '') }],
 		null, variation > 0 ? 1.0 : 0.7);

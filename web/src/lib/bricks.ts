@@ -41,22 +41,31 @@ export const PLATES: Record<string, string> = {
 	'1x3': '3623',
 	'1x4': '3710',
 	'1x6': '3666',
+	'1x5': '78329',
 	'1x8': '3460',
+	'1x10': '4477',
+	'1x12': '60479',
 	'2x2': '3022',
 	'2x3': '3021',
 	'2x4': '3020',
 	'2x6': '3795',
 	'2x8': '3034',
 	'2x10': '3832',
+	'2x12': '2445',
+	'2x16': '4282',
+	'3x3': '11212',
 	'4x4': '3031',
 	'4x6': '3032',
 	'4x8': '3035',
+	'4x10': '3030',
+	'4x12': '3029',
 	'6x6': '3958',
-	'6x8': '3036'
+	'6x8': '3036',
+	'6x10': '3033'
 };
 /** Slopes, keyed by width x depth (sorted): 45° are 2 deep, 33° are 3 deep. */
 export const SLOPES45: Record<string, string> = { '1x2': '3040', '2x2': '3039', '2x4': '3037' };
-export const SLOPES33: Record<string, string> = { '1x3': '4286', '2x3': '3298' };
+export const SLOPES33: Record<string, string> = { '1x3': '4286', '2x3': '3298', '3x4': '3297' };
 /** Tiles: smooth plates without studs. */
 export const TILES: Record<string, string> = {
 	'1x1': '3070',
@@ -66,7 +75,9 @@ export const TILES: Record<string, string> = {
 	'1x6': '6636',
 	'1x8': '4162',
 	'2x2': '3068',
-	'2x4': '87079'
+	'2x3': '26603',
+	'2x4': '87079',
+	'2x6': '69729'
 };
 /** Part number → size, for bricks only (what BrickGPT and the brick-only designs use). */
 export const PART_TO_SIZE: Record<string, string> = Object.fromEntries(
