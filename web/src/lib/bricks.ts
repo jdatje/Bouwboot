@@ -5,7 +5,7 @@
  * k = special kind: 's45' / 's33' slope (d = downhill direction: 0 +x, 1 -x, 2 +y, 3 -y) or 't' tile.
  */
 /** s = special piece from specials.json (wheels, windows, round pieces, arches, curved slopes); d = direction. */
-import SPECIALS_JSON from '#lib/specials.json';
+import { SPECIALS as SPECIALS_JSON } from '#lib/specials.ts';
 type SpecialData = { name: string; buy: { p: string; c: 'main' | number; q: number }[] };
 const SPECIALS_DATA = Object.fromEntries(Object.entries(SPECIALS_JSON).filter(([k]) => !k.startsWith('_'))) as unknown as Record<string, SpecialData>;
 /** The part a special piece is listed under (its first "buy" part), and all buyable special parts → name. */

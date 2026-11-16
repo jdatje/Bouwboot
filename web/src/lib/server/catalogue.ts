@@ -7,7 +7,7 @@ import { createGunzip } from 'node:zlib';
 import { createInterface } from 'node:readline';
 import path from 'node:path';
 import { LIBRARY, PLATES, SLOPES45, SLOPES33, TILES, PART_ALIASES } from '#lib/bricks.ts';
-import SPECIALS from '#lib/specials.json';
+import { SPECIALS } from '#lib/specials.ts';
 import { db } from '#lib/server/db.ts';
 
 const DIR = () => path.join(process.env.DATA_DIR || 'data', 'rebrickable');

@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { gemini } from '#lib/server/gemini.ts';
 import type { ShapeBrick } from '#lib/server/gpu.ts';
-import SPECIALS from '#lib/specials.json';
+import { SPECIALS } from '#lib/specials.ts';
 
 /** Direct design: the language model writes a building program in stud coordinates (no drawing,
  *  no 3D model); gpu/direct.py turns that program into bricks, plates, slopes and tiles. */
@@ -43,13 +43,39 @@ export function directAvailable(): Promise<boolean> {
 	return available;
 }
 
-/** The extra pieces for Gemini's instructions, from the catalogue (entries with a 'use'). */
-function pieceList() {
-	return Object.entries(SPECIALS as Record<string, any>)
-		.filter(([k, v]) => !k.startsWith('_') && v.use && !v.auto)
-		.map(([k, v]) => `  - "${k}": ${v.foot[0]}x${v.foot[1]}x${v.foot[2]}p. ${short(v.use)}`)
+/**
+ * The extra pieces for Gemini's instructions: every hand-made piece, the most used automatically taught
+ * parts, and the rarer ones from the categories that suit this subject (picked by Gemini first).
+ */
+function pieceList(cats: Set<string> = new Set()) {
+	const all = Object.entries(SPECIALS).filter(([, v]) => v.use && !v.auto);
+	const hand = all.filter(([, v]) => v.group < 7);
+	const auto = all.filter(([, v]) => v.group >= 7).sort((a, b) => (b[1].qty ?? 0) - (a[1].qty ?? 0));
+	const top = auto.slice(0, 250);
+	const extra = auto.slice(250).filter(([, v]) => cats.has(v.cat ?? '')).slice(0, 200);
+	return [...hand, ...top, ...extra]
+		.map(([k, v]) => `  - "${k}": ${v.foot[0]}x${v.foot[1]}x${v.foot[2]}p. ${short(v.use!)}`)
 		.join('\n');
 }
+
+/** Part categories (of the rarer taught parts) that could help build this: a quick first question. */
+async function pickCategories(request: string): Promise<Set<string>> {
+	const counts = new Map<string, number>();
+	const auto = Object.values(SPECIALS).filter((v) => v.group >= 7).sort((a, b) => (b.qty ?? 0) - (a.qty ?? 0)).slice(250);
+	for (const v of auto) if (v.cat) counts.set(v.cat, (counts.get(v.cat) ?? 0) + 1);
+	if (!counts.size) return new Set();
+	try {
+		const r = await gemini<{ categories: string[] }>(
+			[{ text: `Someone wants a LEGO model of: ${request}\nWhich of these LEGO part categories contain parts that would help build it? Pick at most 5, only clearly useful ones.\n${[...counts.keys()].join('\n')}` }],
+			{ type: 'object', properties: { categories: { type: 'array', items: { type: 'string' } } }, required: ['categories'] },
+			0.2
+		);
+		return new Set((r.categories ?? []).filter((c) => counts.has(c)).slice(0, 5));
+	} catch {
+		return new Set();
+	}
+}
+
 /** Shorter part names for the list (it gets long). */
 function short(t: string) {
 	t = t.replace(/\s+x\s+/g, 'x');
@@ -73,10 +99,11 @@ export async function designProgram(request: string, studs: number, pieces: numb
 	}
 	let names = COLOR_NAMES.filter(([, id]) => !colorIds || colorIds.includes(id)).map(([n]) => n);
 	if (!names.length) names = COLOR_NAMES.map(([n]) => n);
+	const cats = await pickCategories(request);
 	const spec = readFileSync(path.join(GPU_DIR(), 'direct_prompt.txt'), 'utf8')
 		.replace('__STUDS__', String(studs)).replace('__PIECES__', String(pieces))
 		.replace('__PARTS__', `${partsFor(pieces)}`).replace('__COLORS__', names.join(', '))
-		.replace('__PIECE_LIST__', pieceList());
+		.replace('__PIECE_LIST__', pieceList(cats));
 	const prog = await gemini<Program>(
 		[{ text: spec + '\n\nDesign: ' + request + (variation > 0 ? `\n(Variation ${variation}: make a clearly different design than the obvious one.)` : '') }],
 		null, variation > 0 ? 1.0 : 0.7);

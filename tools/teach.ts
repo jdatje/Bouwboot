@@ -6,13 +6,15 @@
  * parts.json: [{ part, name, cat, qty }, ...] in the order to teach (most used first).
  * For each part: footprint from its studs (or its outline when it has none), height from its shape,
  * direction from its side studs / what sticks out / its slope, and a description from its name.
- * Writes the entries into web/src/lib/specials.json as "p_<part>" (op "piece" for the designer).
+ * Writes compact rows into web/src/lib/specials-auto.json; the designer knows them as "p_<part>" (op "piece").
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { partMesh } from '../web/src/lib/server/ldraw.ts';
 
 const SPEC = '../web/src/lib/specials.json';
+const AUTO = '../web/src/lib/specials-auto.json';
 const data = JSON.parse(readFileSync(SPEC, 'utf8'));
+const auto: Record<string, unknown[]> = JSON.parse(readFileSync(AUTO, 'utf8'));
 const list: { part: string; name: string; cat: string; qty: number }[] = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 const max = Number(process.argv[3] ?? 100);
 const group = Number(process.env.GROUP ?? 7);
@@ -20,6 +22,7 @@ const group = Number(process.env.GROUP ?? 7);
 // part numbers the designer already knows in another way
 const known = new Set<string>();
 for (const [k, v] of Object.entries<any>(data)) if (!k.startsWith('_')) for (const b of v.buy) known.add(b.p);
+for (const p of Object.keys(auto)) known.add(p);
 
 // scene coords: x, -y, -z (LDraw -y is up). rotateY(θ) as three.js: x' = x cos + z sin, z' = -x sin + z cos
 const rot = (x: number, z: number, r: number) => {
@@ -38,8 +41,12 @@ const turnTo = (dx: number, dz: number) => {
 let added = 0, skipped: string[] = [];
 for (const it of list) {
 	if (added >= max) break;
-	if (known.has(it.part) || data['p_' + it.part]) continue;
-	const m = partMesh(it.part);
+	if (known.has(it.part)) continue;
+	// Rebrickable and LDraw sometimes number the same part differently (a/b/c moulds, assemblies)
+	const base = it.part.replace(/(c\d\d)$/, '').replace(/[a-z]$/, '');
+	const cands = [...new Set([it.part, base, base + 'a', base + 'b', base + 'c', base + 'd', it.part.replace(/c\d\d$/, ''), it.part.replace(/-\d+$/, '')])];
+	let file = '', m = null as ReturnType<typeof partMesh>;
+	for (const c of cands) { m = partMesh(c); if (m) { file = c; break; } }
 	if (!m) { skipped.push(`${it.part} (geen LDraw-vorm)`); continue; }
 	const [x0, y0, z0, x1, y1, z1] = m.bbox;
 	const studs = m.studs ?? [];
@@ -56,7 +63,9 @@ for (const it of list) {
 	const az = axis(z0, z1, studs.map((s) => s[2]));
 	const top = studs.length ? Math.min(0, y0 + 4) : y0;
 	const ht = Math.max(1, Math.round((y1 - top) / 8));
-	if (ax.n > 16 || az.n > 16 || ht > 60) { skipped.push(`${it.part} (te groot)`); continue; }
+	// big flat parts (baseplates) may be large; anything else up to 16 studs
+	const lim = ht <= 2 ? 48 : 16;
+	if (ax.n > lim || az.n > lim || ht > 60) { skipped.push(`${it.part} (te groot)`); continue; }
 
 	// direction
 	let r0 = 0, cal = '', dirText = '';
@@ -87,20 +96,12 @@ for (const it of list) {
 	const odd = Math.abs(r0) % 2 === 1;
 	const foot = odd ? [az.n, ax.n, ht] : [ax.n, az.n, ht];
 
-	data['p_' + it.part] = {
-		name: it.name,
-		group,
-		foot,
-		...(cal ? { cal } : {}),
-		r0,
-		center: [Math.round(ax.c * 10) / 10, Math.round(az.c * 10) / 10],
-		use: `${it.name.replace(/\s+/g, ' ')}${dirText ? ` (${dirText})` : ''}`,
-		qty: it.qty,
-		ldraw: [{ f: it.part, c: 'main' }],
-		buy: [{ p: it.part, c: 'main', q: 1 }]
-	};
+	// compact row: [name, category, how often in sets, length, width, height, r0, centre x, centre z, direction kind, (LDraw file)]
+	auto[it.part] = [it.name, it.cat, it.qty, foot[0], foot[1], foot[2], r0, Math.round(ax.c * 10) / 10, Math.round(az.c * 10) / 10, cal,
+		...(file !== it.part ? [file] : [])];
+	known.add(it.part);
 	added++;
 }
-writeFileSync(SPEC, JSON.stringify(data, null, '\t') + '\n');
+writeFileSync(AUTO, JSON.stringify(auto));
 console.log(`added ${added}`);
 if (skipped.length) console.log('skipped:', skipped.join(', '));

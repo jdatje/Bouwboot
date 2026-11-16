@@ -5,19 +5,10 @@
  */
 import * as THREE from 'three';
 import { partOf, type Brick } from '#lib/bricks.ts';
-import SPECIALS from '#lib/specials.json';
+import { SPECIALS } from '#lib/specials.ts';
 
-export type Special = {
-	name: string;
-	group: number;
-	foot: [number, number, number];
-	r0?: number;
-	slope?: boolean;
-	center?: [number, number]; // footprint centre in LDraw x/z (LDU); default: centre of the outline
-	ldraw: { f: string; c: 'main' | number; at?: [number, number, number]; ry?: number; rx?: number }[];
-	buy: { p: string; c: 'main' | number; q: number }[];
-};
-export const specials = Object.fromEntries(Object.entries(SPECIALS).filter(([k]) => !k.startsWith('_'))) as Record<string, Special>;
+export type { Special } from '#lib/specials.ts';
+export const specials = SPECIALS;
 
 type PartMesh = { id: string; title: string; bbox: number[]; groups: { c: number; hex?: string; alpha?: number; pos: number[] }[] };
 

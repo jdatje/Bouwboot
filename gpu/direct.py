@@ -16,6 +16,16 @@ from shape3d import support, hollow, tile_plates
 _SPEC_FILE = next((f for f in (os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "web", "src", "lib", "specials.json"),
                                os.path.join(os.path.dirname(os.path.abspath(__file__)), "specials.json")) if os.path.exists(f)), None)
 SPECIALS = {k: v for k, v in json.load(open(_SPEC_FILE)).items() if not k.startswith("_")} if _SPEC_FILE else {}
+# automatically taught parts (compact rows, see web/src/lib/specials.ts)
+_AUTO_FILE = _SPEC_FILE and _SPEC_FILE.replace("specials.json", "specials-auto.json")
+_DIR_TEXT = {"face": "dir = the side it faces / sticks out", "slope": "dir = the low side", "long": 'dir = "x" or "y" (the long side)'}
+if _AUTO_FILE and os.path.exists(_AUTO_FILE):
+    for _part, _row in json.load(open(_AUTO_FILE)).items():
+        _n, _cat, _q, _l, _w, _h, _r0, _cx, _cz, _cal = _row[:10]
+        SPECIALS["p_" + _part] = {"name": _n, "group": 7, "cat": _cat, "qty": _q, "foot": [_l, _w, _h], "r0": _r0,
+                                 "center": [_cx, _cz], **({"cal": _cal} if _cal else {}),
+                                 "use": _n + (f" ({_DIR_TEXT[_cal]})" if _cal in _DIR_TEXT else ""),
+                                 "ldraw": [{"f": _part, "c": "main"}], "buy": [{"p": _part, "c": "main", "q": 1}]}
 SPECIAL_OPS = {"wheels", "window", "door", "arch", "cone", "dish", "curve", "piece"}
 CORNER_CAL = {"corner_empty", "corner_low"}
 shape3d.CORNER_SPECIALS.update(k for k, v in SPECIALS.items() if v.get("cal") in CORNER_CAL)
@@ -536,9 +546,11 @@ def piece_list():
         for a, b in (("Special ", ""), (" with ", " w/ "), ("Rounded", "Round"), (" and ", " & "), ("Horizontal", "horiz."), ("Vertical", "vert.")):
             t = t.replace(a, b)
         return re.sub(r"\s+", " ", t).strip()[:90]
+    items = [(k, v) for k, v in SPECIALS.items() if v.get("use") and not v.get("auto")]
+    hand = [kv for kv in items if kv[1].get("group", 0) < 7]
+    auto = sorted([kv for kv in items if kv[1].get("group", 0) >= 7], key=lambda kv: -kv[1].get("qty", 0))[:250]
     lines = []
-    for k, v in SPECIALS.items():
-        if v.get("use") and not v.get("auto"):
-            l, w, h = v["foot"]
-            lines.append(f'  - "{k}": {l}x{w}x{h}p. {short(v["use"])}')
+    for k, v in hand + auto:
+        l, w, h = v["foot"]
+        lines.append(f'  - "{k}": {l}x{w}x{h}p. {short(v["use"])}')
     return "\n".join(lines)
