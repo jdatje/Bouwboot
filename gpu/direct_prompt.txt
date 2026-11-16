@@ -43,7 +43,8 @@ SPECIAL LEGO PIECES (real LEGO parts: use them, they make the model look much be
 - Inverted slopes are added automatically under overhangs; you don't place them.
 
 MORE LEGO PIECES: {"op":"piece","name":"<name>","x":3,"y":0,"z":9,"dir":"+x","color":"red"}
-  x,y = corner of the piece's footprint, z = bottom (plates). Footprint "LxW" is for dir +x / "x" (it turns with dir).
+  x,y = corner of the piece's footprint, z = bottom (plates). In the list "LxWxHp" = footprint L (along x for dir +x /
+  "x"; it turns with dir) x W, H plates high.
   "dir": for slopes and curves the LOW side (+x,-x,+y,-y); for corner pieces the special corner (+x+y, -x+y, ...);
   for long pieces just "x" or "y". Use them for details: they make models look much more like real LEGO sets.
 __PIECE_LIST__

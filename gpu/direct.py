@@ -530,9 +530,15 @@ def program_to_target(prog, target, sizes=None, max_scale=3.5):
 
 def piece_list():
     """The extra pieces for the designer's instructions, from the catalogue (entries with a 'use')."""
+    import re
+    def short(t):
+        t = re.sub(r"\s+x\s+", "x", t)
+        for a, b in (("Special ", ""), (" with ", " w/ "), ("Rounded", "Round"), (" and ", " & "), ("Horizontal", "horiz."), ("Vertical", "vert.")):
+            t = t.replace(a, b)
+        return re.sub(r"\s+", " ", t).strip()[:90]
     lines = []
     for k, v in SPECIALS.items():
         if v.get("use") and not v.get("auto"):
             l, w, h = v["foot"]
-            lines.append(f'  - "{k}": {l}x{w}, {h} plates high. {v["use"]}')
+            lines.append(f'  - "{k}": {l}x{w}x{h}p. {short(v["use"])}')
     return "\n".join(lines)

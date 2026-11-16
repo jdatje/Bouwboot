@@ -47,8 +47,15 @@ export function directAvailable(): Promise<boolean> {
 function pieceList() {
 	return Object.entries(SPECIALS as Record<string, any>)
 		.filter(([k, v]) => !k.startsWith('_') && v.use && !v.auto)
-		.map(([k, v]) => `  - "${k}": ${v.foot[0]}x${v.foot[1]}, ${v.foot[2]} plates high. ${v.use}`)
+		.map(([k, v]) => `  - "${k}": ${v.foot[0]}x${v.foot[1]}x${v.foot[2]}p. ${short(v.use)}`)
 		.join('\n');
+}
+/** Shorter part names for the list (it gets long). */
+function short(t: string) {
+	t = t.replace(/\s+x\s+/g, 'x');
+	for (const [a, b] of [['Special ', ''], [' with ', ' w/ '], ['Rounded', 'Round'], [' and ', ' & '], ['Horizontal', 'horiz.'], ['Vertical', 'vert.']])
+		t = t.split(a).join(b);
+	return t.replace(/\s+/g, ' ').trim().slice(0, 90);
 }
 
 /** How many parts Gemini should use: more detail for bigger builds (200 pieces ≈ 40 parts, 1400 ≈ 160). */
