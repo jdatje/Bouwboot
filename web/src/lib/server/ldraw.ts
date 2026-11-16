@@ -14,7 +14,7 @@ import path from 'node:path';
 
 const ROOT = () => process.env.LDRAW_DIR || path.join(process.env.DATA_DIR || 'data', 'ldraw');
 const CACHE = () => path.join(process.env.DATA_DIR || 'data', 'ldraw-cache');
-const VERSION = 3; // bump when the output changes, so old cache files are rebuilt
+const VERSION = 4; // bump when the output changes, so old cache files are rebuilt
 
 export function ldrawAvailable(): boolean {
 	return existsSync(path.join(ROOT(), 'ldraw', 'parts'));
@@ -97,6 +97,8 @@ export type PartMesh = {
 	id: string;
 	title: string;
 	bbox: number[]; // minx miny minz maxx maxy maxz (LDU)
+	studs?: number[][]; // studs pointing up: [x, y, z] (LDU)
+	side?: number[][]; // studs pointing sideways: [x, y, z, dx, dz] (dx/dz = direction they point)
 	groups: { c: number; hex?: string; alpha?: number; pos: number[] }[];
 };
 
@@ -104,6 +106,7 @@ function build(id: string): PartMesh | null {
 	const top = resolve(id.endsWith('.dat') ? id : id + '.dat');
 	if (!top) return null;
 	const groups = new Map<number, number[]>();
+	const studs: number[][] = [], side: number[][] = [];
 	const bb = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
 	let title = '';
 	const walk = (file: string, m: M, colour: number, depth: number) => {
@@ -124,6 +127,14 @@ function build(id: string): PartMesh | null {
 				const name = t.slice(14).join(' ').toLowerCase().replace(/\\/g, '/');
 				// the tubes under bricks are hidden once pieces are stacked: skip them to keep big builds light
 				if (HIDDEN_UNDERSIDE.has(name.replace(/^(48|8)\//, ''))) continue;
+				if (/^(48\/|8\/)?stud(2a?|10|15|17a|-logo\d*)?\.dat$/.test(name) || /^studp\d+\.dat$/.test(name)) {
+					// where a stud is and which way it points (its local -y)
+					const mm = mul(m, child);
+					const up = [-mm[1], -mm[4], -mm[7]];
+					const pos = [mm[9], mm[10], mm[11]].map((v) => Math.round(v * 10) / 10);
+					if (up[1] < -0.9) studs.push(pos);
+					else if (Math.abs(up[1]) < 0.1) side.push([...pos, Math.round(up[0]), Math.round(up[2])]);
+				}
 				const f = resolve(name);
 				if (f) walk(f, mul(m, child), c, depth + 1);
 			} else if (type === '3' || type === '4') {
@@ -146,6 +157,8 @@ function build(id: string): PartMesh | null {
 		id,
 		title,
 		bbox: bb.map((x) => Math.round(x * 100) / 100),
+		studs,
+		side,
 		groups: [...groups.entries()].map(([c, pos]) => ({
 			c,
 			...(c === 16 ? {} : { hex: cols.get(c)?.hex ?? '#888888', alpha: cols.get(c)?.alpha ?? 1 }),

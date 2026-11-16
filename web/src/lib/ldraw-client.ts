@@ -13,6 +13,7 @@ export type Special = {
 	foot: [number, number, number];
 	r0?: number;
 	slope?: boolean;
+	center?: [number, number]; // footprint centre in LDraw x/z (LDU); default: centre of the outline
 	ldraw: { f: string; c: 'main' | number; at?: [number, number, number]; ry?: number; rx?: number }[];
 	buy: { p: string; c: 'main' | number; q: number }[];
 };
@@ -115,6 +116,8 @@ async function make(b: Brick, hexOf: (id: number) => string): Promise<Built | nu
 		if (mi > 0) fixed.push({ hex: k, alpha: bk!.alpha });
 	});
 	geo.setAttribute('position', new THREE.Float32BufferAttribute(all, 3));
+	// parts with something sticking out (a handle, a clip) are centred on their studs, not their outline
+	if (spec?.center) geo.translate(-spec.center[0] / 20, 0, spec.center[1] / 20);
 
 	// direction: special pieces and slopes use r0 + d; plain bricks turn when their footprint doesn't match
 	let turn = 0;
@@ -132,7 +135,8 @@ async function make(b: Brick, hexOf: (id: number) => string): Promise<Built | nu
 	}
 	// centre on the footprint; bottom at -height/2
 	const ht = heightOfBrick(b);
-	geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y - ht / 2, -(bb.min.z + bb.max.z) / 2);
+	if (spec?.center) geo.translate(0, -bb.min.y - ht / 2, 0);
+	else geo.translate(-(bb.min.x + bb.max.x) / 2, -bb.min.y - ht / 2, -(bb.min.z + bb.max.z) / 2);
 	geo.computeVertexNormals();
 	return { geo, fixed };
 }

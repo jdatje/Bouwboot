@@ -1742,5 +1742,3570 @@
 			}
 		],
 		"group": 6
+	},
+	"p_15573": {
+		"name": "Plate Special 1 x 2 with 1 Stud with Groove and Inside Stud Holder (Jumper)",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with 1 Stud with Groove and Inside Stud Holder (Jumper) (dir = \"x\" or \"y\" (the long side))",
+		"qty": 31967,
+		"ldraw": [
+			{
+				"f": "15573",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15573",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_24866": {
+		"name": "Plant, Flower, Plate Round 1 x 1 with 5 Petals",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plant, Flower, Plate Round 1 x 1 with 5 Petals",
+		"qty": 20206,
+		"ldraw": [
+			{
+				"f": "24866",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24866",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_87580": {
+		"name": "Plate Special 2 x 2 with Groove and Center Stud (Jumper)",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 2 x 2 with Groove and Center Stud (Jumper)",
+		"qty": 18163,
+		"ldraw": [
+			{
+				"f": "87580",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "87580",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_87087": {
+		"name": "Brick Special 1 x 1 with Stud on 1 Side",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 1 with Stud on 1 Side (dir = the side its side studs face)",
+		"qty": 17770,
+		"ldraw": [
+			{
+				"f": "87087",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "87087",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_32028": {
+		"name": "Plate Special 1 x 2 with Door Rail",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Door Rail (dir = the side where it sticks out)",
+		"qty": 15426,
+		"ldraw": [
+			{
+				"f": "32028",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "32028",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_15712": {
+		"name": "Tile Special 1 x 1 with Clip with Rounded Edges",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special 1 x 1 with Clip with Rounded Edges",
+		"qty": 14987,
+		"ldraw": [
+			{
+				"f": "15712",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15712",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_99780": {
+		"name": "Bracket 1 x 2 - 1 x 2 Inverted",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 1 x 2 Inverted (dir = the side its side studs face)",
+		"qty": 14425,
+		"ldraw": [
+			{
+				"f": "99780",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "99780",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_99207": {
+		"name": "Bracket 1 x 2 - 2 x 2 Inverted",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 2 x 2 Inverted (dir = the side its side studs face)",
+		"qty": 14343,
+		"ldraw": [
+			{
+				"f": "99207",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "99207",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_44728": {
+		"name": "Bracket 1 x 2 - 2 x 2",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 2 x 2 (dir = the side its side studs face)",
+		"qty": 13288,
+		"ldraw": [
+			{
+				"f": "44728",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "44728",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_11211": {
+		"name": "Brick Special 1 x 2 with 2 Studs on 1 Side",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 2 with 2 Studs on 1 Side (dir = the side its side studs face)",
+		"qty": 12789,
+		"ldraw": [
+			{
+				"f": "11211",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11211",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_6091": {
+		"name": "Brick Curved 1 x 2 x 1 1/3 with Curved Top",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			4
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Curved 1 x 2 x 1 1/3 with Curved Top (dir = the side where it sticks out)",
+		"qty": 12524,
+		"ldraw": [
+			{
+				"f": "6091",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "6091",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2654": {
+		"name": "Plate Round 2 x 2 with Rounded Bottom [Boat Stud]",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Round 2 x 2 with Rounded Bottom [Boat Stud]",
+		"qty": 12275,
+		"ldraw": [
+			{
+				"f": "2654",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2654",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_22885": {
+		"name": "Brick Special 1 x 2 x 1 2/3 with 4 Studs on 1 Side",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 2 x 1 2/3 with 4 Studs on 1 Side (dir = the side its side studs face)",
+		"qty": 11513,
+		"ldraw": [
+			{
+				"f": "22885",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "22885",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_32607": {
+		"name": "Plant, Plate 1 x 1 Round with 3 Leaves",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plant, Plate 1 x 1 Round with 3 Leaves (dir = the side where it sticks out)",
+		"qty": 11488,
+		"ldraw": [
+			{
+				"f": "32607",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "32607",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_33909": {
+		"name": "Plate Special 2 x 2 with Only 2 Studs",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Plate Special 2 x 2 with Only 2 Studs (dir = the side where it sticks out)",
+		"qty": 11319,
+		"ldraw": [
+			{
+				"f": "33909",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "33909",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_60897": {
+		"name": "Plate Special 1 x 1 with Clip Vertical [Thick Open O Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Clip Vertical [Thick Open O Clip] (dir = the side where it sticks out)",
+		"qty": 10185,
+		"ldraw": [
+			{
+				"f": "60897",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60897",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_60478": {
+		"name": "Plate Special 1 x 2 with Handle on End [Closed Ends]",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Handle on End [Closed Ends] (dir = the side where it sticks out)",
+		"qty": 10006,
+		"ldraw": [
+			{
+				"f": "60478",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60478",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_32952": {
+		"name": "Brick Special 1 x 1 x 1 2/3 with Studs on 1 Side",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 1 x 1 2/3 with Studs on 1 Side (dir = the side its side studs face)",
+		"qty": 9471,
+		"ldraw": [
+			{
+				"f": "32952",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "32952",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_48336": {
+		"name": "Plate Special 1 x 2 [Side Handle Closed Ends]",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 [Side Handle Closed Ends] (dir = the side where it sticks out)",
+		"qty": 9315,
+		"ldraw": [
+			{
+				"f": "48336",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "48336",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_99781": {
+		"name": "Bracket 1 x 2 - 1 x 2",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 1 x 2 (dir = the side its side studs face)",
+		"qty": 8932,
+		"ldraw": [
+			{
+				"f": "99781",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "99781",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2540": {
+		"name": "Plate Special 1 x 2 Side Handle [Free Ends]",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 Side Handle [Free Ends] (dir = the side where it sticks out)",
+		"qty": 8812,
+		"ldraw": [
+			{
+				"f": "2540",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2540",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_63868": {
+		"name": "Plate Special 1 x 2 with Clip Horizontal on End",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Clip Horizontal on End (dir = the side where it sticks out)",
+		"qty": 8779,
+		"ldraw": [
+			{
+				"f": "63868",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "63868",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_30414": {
+		"name": "Brick Special 1 x 4 with 4 Studs on One Side",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 4 with 4 Studs on One Side (dir = the side its side studs face)",
+		"qty": 8774,
+		"ldraw": [
+			{
+				"f": "30414",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "30414",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_27925": {
+		"name": "Tile 2 x 2 Curved, Macaroni",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			10,
+			-10
+		],
+		"use": "Tile 2 x 2 Curved, Macaroni",
+		"qty": 8613,
+		"ldraw": [
+			{
+				"f": "27925",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "27925",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3794a": {
+		"name": "Plate Special 1 x 2 with 1 Stud without Groove (Jumper)",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with 1 Stud without Groove (Jumper) (dir = \"x\" or \"y\" (the long side))",
+		"qty": 8375,
+		"ldraw": [
+			{
+				"f": "3794a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3794a",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_41740": {
+		"name": "Plate Special 1 x 4 with 2 Studs with Groove [New Underside]",
+		"group": 7,
+		"foot": [
+			4,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 4 with 2 Studs with Groove [New Underside] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 8111,
+		"ldraw": [
+			{
+				"f": "41740",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "41740",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_15672": {
+		"name": "Brick Sloped 45° 2 x 1 with 2/3 Cutout [New Version]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Brick Sloped 45° 2 x 1 with 2/3 Cutout [New Version] (dir = the side where it sticks out)",
+		"qty": 7992,
+		"ldraw": [
+			{
+				"f": "15672",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15672",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_26601": {
+		"name": "Wedge Plate 2 x 2 Cut Corner",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Wedge Plate 2 x 2 Cut Corner",
+		"qty": 7723,
+		"ldraw": [
+			{
+				"f": "26601",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "26601",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_61252": {
+		"name": "Plate Special 1 x 1 with Clip Horizontal [Thick Open O Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Clip Horizontal [Thick Open O Clip] (dir = the side where it sticks out)",
+		"qty": 7312,
+		"ldraw": [
+			{
+				"f": "61252",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "61252",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3937": {
+		"name": "Hinge Brick 1 x 2 Base",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Hinge Brick 1 x 2 Base (dir = \"x\" or \"y\" (the long side))",
+		"qty": 6904,
+		"ldraw": [
+			{
+				"f": "3937",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3937",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_18674": {
+		"name": "Plate Special Round 2 x 2 with Center Stud (Jumper Plate)",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special Round 2 x 2 with Center Stud (Jumper Plate)",
+		"qty": 6788,
+		"ldraw": [
+			{
+				"f": "18674",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "18674",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_24201": {
+		"name": "Brick Curved Inverted 2 x 1",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "long",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Brick Curved Inverted 2 x 1 (dir = \"x\" or \"y\" (the long side))",
+		"qty": 6523,
+		"ldraw": [
+			{
+				"f": "24201",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24201",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4081b": {
+		"name": "Plate Special 1 x 1 with Clip Light, Bar Hole [Thick Ring]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Clip Light, Bar Hole [Thick Ring] (dir = the side where it sticks out)",
+		"qty": 6349,
+		"ldraw": [
+			{
+				"f": "4081b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4081b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_99206": {
+		"name": "Plate Special 2 x 2 x 2/3 with Two Studs On Side and Two Raised [Solid Anti-stud]",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Plate Special 2 x 2 x 2/3 with Two Studs On Side and Two Raised [Solid Anti-stud] (dir = the side its side studs face)",
+		"qty": 6201,
+		"ldraw": [
+			{
+				"f": "99206",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "99206",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_28192": {
+		"name": "Brick Sloped 45° 2 x 1 with 2/3 Inverted Cutout and No Stud",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 1,
+		"center": [
+			0,
+			-10
+		],
+		"use": "Brick Sloped 45° 2 x 1 with 2/3 Inverted Cutout and No Stud (dir = \"x\" or \"y\" (the long side))",
+		"qty": 6195,
+		"ldraw": [
+			{
+				"f": "28192",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "28192",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_53451": {
+		"name": "Animal Body Part, Barb / Claw / Tooth / Talon / Horn, Small",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			13
+		],
+		"use": "Animal Body Part, Barb / Claw / Tooth / Talon / Horn, Small",
+		"qty": 6182,
+		"ldraw": [
+			{
+				"f": "53451",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "53451",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_34103": {
+		"name": "Plate Special 1 x 3 with 2 Studs with Groove and Inside Stud Holder (Jumper)",
+		"group": 7,
+		"foot": [
+			3,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 3 with 2 Studs with Groove and Inside Stud Holder (Jumper) (dir = \"x\" or \"y\" (the long side))",
+		"qty": 5876,
+		"ldraw": [
+			{
+				"f": "34103",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "34103",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_36840": {
+		"name": "Bracket 1 x 1 - 1 x 1 Inverted",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 1 - 1 x 1 Inverted (dir = the side its side studs face)",
+		"qty": 5542,
+		"ldraw": [
+			{
+				"f": "36840",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "36840",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2432": {
+		"name": "Tile Special 1 x 2 with Handle",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			4
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special 1 x 2 with Handle (dir = \"x\" or \"y\" (the long side))",
+		"qty": 5349,
+		"ldraw": [
+			{
+				"f": "2432",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2432",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_60470b": {
+		"name": "Plate Special 1 x 2 with Clips Horizontal [Open O Clips]",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Clips Horizontal [Open O Clips] (dir = the side where it sticks out)",
+		"qty": 5320,
+		"ldraw": [
+			{
+				"f": "60470b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60470b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_26047": {
+		"name": "Plate Special 1 x 1 Rounded with Handle",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 Rounded with Handle (dir = the side where it sticks out)",
+		"qty": 5317,
+		"ldraw": [
+			{
+				"f": "26047",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "26047",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2450": {
+		"name": "Wedge Plate 3 x 3 Cut Corner",
+		"group": 7,
+		"foot": [
+			3,
+			3,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Wedge Plate 3 x 3 Cut Corner",
+		"qty": 5213,
+		"ldraw": [
+			{
+				"f": "2450",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2450",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3794b": {
+		"name": "Plate Special 1 x 2 with 1 Stud with Groove (Jumper)",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with 1 Stud with Groove (Jumper) (dir = \"x\" or \"y\" (the long side))",
+		"qty": 5171,
+		"ldraw": [
+			{
+				"f": "3794b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3794b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_29119": {
+		"name": "Brick Wedged, Curved 2 x 1 with Stud Notch Right",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "slope",
+		"r0": 1,
+		"center": [
+			0,
+			1.5
+		],
+		"use": "Brick Wedged, Curved 2 x 1 with Stud Notch Right (dir = the low side)",
+		"qty": 5141,
+		"ldraw": [
+			{
+				"f": "29119",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "29119",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_29120": {
+		"name": "Brick Wedged, Curved 2 x 1 with Stud Notch Left",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "slope",
+		"r0": 1,
+		"center": [
+			0,
+			1.5
+		],
+		"use": "Brick Wedged, Curved 2 x 1 with Stud Notch Left (dir = the low side)",
+		"qty": 5135,
+		"ldraw": [
+			{
+				"f": "29120",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "29120",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_60481": {
+		"name": "Brick Sloped 65° 2 x 1 x 2",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			6
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Sloped 65° 2 x 1 x 2 (dir = the side where it sticks out)",
+		"qty": 5054,
+		"ldraw": [
+			{
+				"f": "60481",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60481",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_32803": {
+		"name": "Brick Curved Inverted 2 x 2 x 2/3",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			10
+		],
+		"use": "Brick Curved Inverted 2 x 2 x 2/3",
+		"qty": 5029,
+		"ldraw": [
+			{
+				"f": "32803",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "32803",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_49668": {
+		"name": "Plate Special 1 x 1 with Tooth",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Tooth (dir = the side where it sticks out)",
+		"qty": 4963,
+		"ldraw": [
+			{
+				"f": "49668",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "49668",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_11090": {
+		"name": "Bar Holder with Clip",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			4
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar Holder with Clip",
+		"qty": 4959,
+		"ldraw": [
+			{
+				"f": "11090",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11090",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4865b": {
+		"name": "Panel 1 x 2 x 1 [Rounded Corners]",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Panel 1 x 2 x 1 [Rounded Corners] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 4946,
+		"ldraw": [
+			{
+				"f": "4865b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4865b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_44861": {
+		"name": "Plate Special 1 x 2, Top Clip [Open O]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Plate Special 1 x 2, Top Clip [Open O] (dir = the side where it sticks out)",
+		"qty": 4944,
+		"ldraw": [
+			{
+				"f": "44861",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "44861",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_11476": {
+		"name": "Plate Special 1 x 2 with Clip Horizontal on Side",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Clip Horizontal on Side (dir = the side where it sticks out)",
+		"qty": 4912,
+		"ldraw": [
+			{
+				"f": "11476",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11476",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_73825": {
+		"name": "Bracket 1 x 1 - 1 x 2 Inverted",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 1 - 1 x 2 Inverted (dir = the side its side studs face)",
+		"qty": 4870,
+		"ldraw": [
+			{
+				"f": "73825",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "73825",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_43722": {
+		"name": "Wedge Plate 3 x 2 Right",
+		"group": 7,
+		"foot": [
+			1,
+			3,
+			1
+		],
+		"cal": "face",
+		"r0": 2,
+		"center": [
+			10,
+			0
+		],
+		"use": "Wedge Plate 3 x 2 Right (dir = the side where it sticks out)",
+		"qty": 4672,
+		"ldraw": [
+			{
+				"f": "43722",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "43722",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_33291": {
+		"name": "Plant, Flower, Plate Round 1 x 1 with 4 Petals",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plant, Flower, Plate Round 1 x 1 with 4 Petals",
+		"qty": 4659,
+		"ldraw": [
+			{
+				"f": "33291",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "33291",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_85080": {
+		"name": "Brick Round Corner 2 x 2 Macaroni with Stud Notch and Reinforced Underside [New Style]",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"r0": 0,
+		"center": [
+			10,
+			-10
+		],
+		"use": "Brick Round Corner 2 x 2 Macaroni with Stud Notch and Reinforced Underside [New Style]",
+		"qty": 4587,
+		"ldraw": [
+			{
+				"f": "85080",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "85080",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_43723": {
+		"name": "Wedge Plate 3 x 2 Left",
+		"group": 7,
+		"foot": [
+			1,
+			3,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Wedge Plate 3 x 2 Left (dir = the side where it sticks out)",
+		"qty": 4546,
+		"ldraw": [
+			{
+				"f": "43723",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "43723",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_73983": {
+		"name": "Hinge Plate 1 x 4 Swivel Top / Base - Solid Clip [Complete Assembly]",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Hinge Plate 1 x 4 Swivel Top / Base - Solid Clip [Complete Assembly] (dir = the side where it sticks out)",
+		"qty": 4543,
+		"ldraw": [
+			{
+				"f": "73983",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "73983",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4304": {
+		"name": "Plate Special 2 x 2 x 2/3 with Two Studs On Side and Two Raised [Half Hollow Anti-stud] - Updated Version",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			10
+		],
+		"use": "Plate Special 2 x 2 x 2/3 with Two Studs On Side and Two Raised [Half Hollow Anti-stud] - Updated Version (dir = the side its side studs face)",
+		"qty": 4504,
+		"ldraw": [
+			{
+				"f": "4304",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4304",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_32828": {
+		"name": "Plate Special Round 1 x 1 with Hollow Stud and Horizontal Bar 1L",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special Round 1 x 1 with Hollow Stud and Horizontal Bar 1L (dir = the side where it sticks out)",
+		"qty": 4477,
+		"ldraw": [
+			{
+				"f": "32828",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "32828",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_63965": {
+		"name": "Bar 6L with Stop Ring",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			15
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar 6L with Stop Ring",
+		"qty": 4408,
+		"ldraw": [
+			{
+				"f": "63965",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "63965",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_30357": {
+		"name": "Plate Round Corner 3 x 3",
+		"group": 7,
+		"foot": [
+			3,
+			3,
+			1
+		],
+		"r0": 0,
+		"center": [
+			20,
+			20
+		],
+		"use": "Plate Round Corner 3 x 3",
+		"qty": 4396,
+		"ldraw": [
+			{
+				"f": "30357",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "30357",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_41770": {
+		"name": "Wedge Plate 4 x 2 Left",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Wedge Plate 4 x 2 Left (dir = the side where it sticks out)",
+		"qty": 4343,
+		"ldraw": [
+			{
+				"f": "41770",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "41770",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_86996": {
+		"name": "Plate 1 x 1 x 2/3 with Open Stud",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate 1 x 1 x 2/3 with Open Stud",
+		"qty": 4339,
+		"ldraw": [
+			{
+				"f": "86996",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "86996",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_36841": {
+		"name": "Bracket 1 x 1 - 1 x 1",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 1 - 1 x 1 (dir = the side its side studs face)",
+		"qty": 4325,
+		"ldraw": [
+			{
+				"f": "36841",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "36841",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_41769": {
+		"name": "Wedge Plate 4 x 2 Right",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			1
+		],
+		"cal": "face",
+		"r0": 2,
+		"center": [
+			10,
+			0
+		],
+		"use": "Wedge Plate 4 x 2 Right (dir = the side where it sticks out)",
+		"qty": 4319,
+		"ldraw": [
+			{
+				"f": "41769",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "41769",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_87552": {
+		"name": "Panel 1 x 2 x 2 [Side Supports / Hollow Studs]",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			6
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Panel 1 x 2 x 2 [Side Supports / Hollow Studs] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 4297,
+		"ldraw": [
+			{
+				"f": "87552",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "87552",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_6134": {
+		"name": "Hinge Brick 2 x 2 Top Plate Thin",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			10
+		],
+		"use": "Hinge Brick 2 x 2 Top Plate Thin",
+		"qty": 4289,
+		"ldraw": [
+			{
+				"f": "6134",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "6134",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_27263": {
+		"name": "Tile Special 2 x 2 Corner with Cut Corner - Facet",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			10,
+			10
+		],
+		"use": "Tile Special 2 x 2 Corner with Cut Corner - Facet",
+		"qty": 4240,
+		"ldraw": [
+			{
+				"f": "27263",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "27263",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2555": {
+		"name": "Tile Special 1 x 1 with Clip and Straight Tips",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special 1 x 1 with Clip and Straight Tips",
+		"qty": 4196,
+		"ldraw": [
+			{
+				"f": "2555",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2555",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_92280": {
+		"name": "Plate Special 1 x 2, Top Clip [Split]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Plate Special 1 x 2, Top Clip [Split] (dir = the side where it sticks out)",
+		"qty": 4177,
+		"ldraw": [
+			{
+				"f": "92280",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "92280",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4865a": {
+		"name": "Panel 1 x 2 x 1 [Square Corners]",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Panel 1 x 2 x 1 [Square Corners] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 4157,
+		"ldraw": [
+			{
+				"f": "4865a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4865a",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_26604": {
+		"name": "Brick Special 1 x 1 with Studs on 2 Adjacent Sides",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 1 with Studs on 2 Adjacent Sides (dir = the side its side studs face)",
+		"qty": 4152,
+		"ldraw": [
+			{
+				"f": "26604",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "26604",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_11458": {
+		"name": "Plate Special 1 x 2 with Pin Hole on Top",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Pin Hole on Top (dir = the side where it sticks out)",
+		"qty": 4054,
+		"ldraw": [
+			{
+				"f": "11458",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11458",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4460b": {
+		"name": "Brick Sloped 75° 2 x 1 x 3 with Hollow Stud",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			9
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Sloped 75° 2 x 1 x 3 with Hollow Stud (dir = the side where it sticks out)",
+		"qty": 4043,
+		"ldraw": [
+			{
+				"f": "4460b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4460b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_23443": {
+		"name": "Bar Holder with Hole and Bar Handle",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar Holder with Hole and Bar Handle",
+		"qty": 3967,
+		"ldraw": [
+			{
+				"f": "23443",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "23443",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_30565": {
+		"name": "Plate Round Corner 4 x 4",
+		"group": 7,
+		"foot": [
+			4,
+			4,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Round Corner 4 x 4",
+		"qty": 3943,
+		"ldraw": [
+			{
+				"f": "30565",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "30565",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_60475b": {
+		"name": "Brick Special 1 x 1 with Clip Vertical [Open O Clip, Hollow Stud]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 1 with Clip Vertical [Open O Clip, Hollow Stud] (dir = the side where it sticks out)",
+		"qty": 3766,
+		"ldraw": [
+			{
+				"f": "60475b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "60475b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4085c": {
+		"name": "Plate Special 1 x 1 with Clip Vertical [Thick U Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Clip Vertical [Thick U Clip] (dir = the side where it sticks out)",
+		"qty": 3754,
+		"ldraw": [
+			{
+				"f": "4085c",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4085c",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_14704": {
+		"name": "Plate Special 1 x 2 5.9mm Centre Side Towball Socket",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 5.9mm Centre Side Towball Socket (dir = the side where it sticks out)",
+		"qty": 3748,
+		"ldraw": [
+			{
+				"f": "14704",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "14704",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3176": {
+		"name": "Plate Special 3 x 2 with Rounded End, Hole",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 3 x 2 with Rounded End, Hole (dir = the side where it sticks out)",
+		"qty": 3713,
+		"ldraw": [
+			{
+				"f": "3176",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3176",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_6231": {
+		"name": "Panel 1 x 1 x 1 Corner",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Panel 1 x 1 x 1 Corner",
+		"qty": 3710,
+		"ldraw": [
+			{
+				"f": "6231",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "6231",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_15535": {
+		"name": "Tile Special Round 2 x 2 with Hole",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special Round 2 x 2 with Hole",
+		"qty": 3670,
+		"ldraw": [
+			{
+				"f": "15535",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15535",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_18677": {
+		"name": "Plate Special 1 x 2 with Pin Hole Underneath",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Pin Hole Underneath (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3625,
+		"ldraw": [
+			{
+				"f": "18677",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "18677",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_79389": {
+		"name": "Bracket 1 x 1 - 1 x 2",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 1 - 1 x 2 (dir = the side its side studs face)",
+		"qty": 3499,
+		"ldraw": [
+			{
+				"f": "79389",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "79389",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_92593": {
+		"name": "Plate Special 1 x 4 with 2 Studs, 3 Bottom Tubes",
+		"group": 7,
+		"foot": [
+			4,
+			1,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 4 with 2 Studs, 3 Bottom Tubes (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3487,
+		"ldraw": [
+			{
+				"f": "92593",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "92593",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3386": {
+		"name": "Plate Special 1 x 1 x 2/3 Half Round with Side Stud",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 x 2/3 Half Round with Side Stud (dir = the side its side studs face)",
+		"qty": 3430,
+		"ldraw": [
+			{
+				"f": "3386",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3386",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_48729b": {
+		"name": "Bar 1L with Clip [Cut Edges and One Side Hole] [Gap in Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar 1L with Clip [Cut Edges and One Side Hole] [Gap in Clip]",
+		"qty": 3370,
+		"ldraw": [
+			{
+				"f": "48729b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "48729b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_6019": {
+		"name": "Plate Special 1 x 1 with Clip Horizontal [Thick U Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			2
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 1 with Clip Horizontal [Thick U Clip] (dir = the side where it sticks out)",
+		"qty": 3282,
+		"ldraw": [
+			{
+				"f": "6019",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "6019",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_22385": {
+		"name": "Tile Special 2 x 3 Pentagonal",
+		"group": 7,
+		"foot": [
+			3,
+			2,
+			1
+		],
+		"cal": "long",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special 2 x 3 Pentagonal (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3217,
+		"ldraw": [
+			{
+				"f": "22385",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "22385",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_87620": {
+		"name": "Brick Wedged 2 x 2 Facet",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			3
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Wedged 2 x 2 Facet",
+		"qty": 3188,
+		"ldraw": [
+			{
+				"f": "87620",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "87620",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3742": {
+		"name": "Plant, Flower - Small",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0.2
+		],
+		"use": "Plant, Flower - Small",
+		"qty": 3161,
+		"ldraw": [
+			{
+				"f": "3742",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3742",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3938": {
+		"name": "Hinge Brick 1 x 2 Top Plate Thin",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			2
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Hinge Brick 1 x 2 Top Plate Thin (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3126,
+		"ldraw": [
+			{
+				"f": "3938",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3938",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2449": {
+		"name": "Brick Sloped Inverted 75° 2 x 1 x 3",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			9
+		],
+		"cal": "long",
+		"r0": 1,
+		"center": [
+			0,
+			-10
+		],
+		"use": "Brick Sloped Inverted 75° 2 x 1 x 3 (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3119,
+		"ldraw": [
+			{
+				"f": "2449",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2449",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_88072": {
+		"name": "Plate Special 1 x 2 with Bar Up [Horizontal Arm 5mm]",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 1 x 2 with Bar Up [Horizontal Arm 5mm] (dir = the side where it sticks out)",
+		"qty": 3114,
+		"ldraw": [
+			{
+				"f": "88072",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "88072",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3678b": {
+		"name": "Brick Sloped 65° 2 x 2 x 2 with Bottom Tube",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			6
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Sloped 65° 2 x 2 x 2 with Bottom Tube (dir = the side where it sticks out)",
+		"qty": 3077,
+		"ldraw": [
+			{
+				"f": "3678b",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3678b",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_51739": {
+		"name": "Wedge Plate 2 x 4",
+		"group": 7,
+		"foot": [
+			4,
+			2,
+			1
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Wedge Plate 2 x 4 (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3068,
+		"ldraw": [
+			{
+				"f": "51739",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "51739",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2423": {
+		"name": "Plant, Leaves 4 x 3",
+		"group": 7,
+		"foot": [
+			4,
+			3,
+			1
+		],
+		"cal": "long",
+		"r0": 1,
+		"center": [
+			0,
+			-30
+		],
+		"use": "Plant, Leaves 4 x 3 (dir = \"x\" or \"y\" (the long side))",
+		"qty": 3053,
+		"ldraw": [
+			{
+				"f": "2423",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2423",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3680": {
+		"name": "Turntable 2 x 2 Plate, Base",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Turntable 2 x 2 Plate, Base",
+		"qty": 3034,
+		"ldraw": [
+			{
+				"f": "3680",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3680",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_41682": {
+		"name": "Bracket 2 x 2 with 1 x 2 Vertical Studs",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			4
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 2 x 2 with 1 x 2 Vertical Studs (dir = the side its side studs face)",
+		"qty": 3011,
+		"ldraw": [
+			{
+				"f": "41682",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "41682",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_11203": {
+		"name": "Tile Special 2 x 2 Inverted",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Tile Special 2 x 2 Inverted",
+		"qty": 2960,
+		"ldraw": [
+			{
+				"f": "11203",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "11203",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3484": {
+		"name": "Bar 1L with Clip [Cut Edges and One Side Hole] [Full Clip]",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar 1L with Clip [Cut Edges and One Side Hole] [Full Clip]",
+		"qty": 2935,
+		"ldraw": [
+			{
+				"f": "3484",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3484",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4733": {
+		"name": "Brick Special 1 x 1 Studs on 4 Sides",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 1 Studs on 4 Sides",
+		"qty": 2918,
+		"ldraw": [
+			{
+				"f": "4733",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4733",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_44302a": {
+		"name": "Hinge Plate 1 x 2 Locking with 2 Fingers On End, with Groove, 9 Teeth",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Hinge Plate 1 x 2 Locking with 2 Fingers On End, with Groove, 9 Teeth (dir = the side where it sticks out)",
+		"qty": 2856,
+		"ldraw": [
+			{
+				"f": "44302a",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "44302a",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3829c01": {
+		"name": "Steering Stand 1 x 2 with Black Steering Wheel",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			6
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			-0.1
+		],
+		"use": "Steering Stand 1 x 2 with Black Steering Wheel (dir = \"x\" or \"y\" (the long side))",
+		"qty": 2848,
+		"ldraw": [
+			{
+				"f": "3829c01",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3829c01",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_24299": {
+		"name": "Wedge Plate 2 x 2 Left",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 0,
+		"center": [
+			-10,
+			0
+		],
+		"use": "Wedge Plate 2 x 2 Left (dir = the side where it sticks out)",
+		"qty": 2810,
+		"ldraw": [
+			{
+				"f": "24299",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24299",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_78258": {
+		"name": "Bar 2L with Stop in Center",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			5
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bar 2L with Stop in Center",
+		"qty": 2734,
+		"ldraw": [
+			{
+				"f": "78258",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "78258",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_28802": {
+		"name": "Bracket 1 x 2 - 1 x 4 [Rounded Corners at Bottom, Square Corners at Top]",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 1 x 4 [Rounded Corners at Bottom, Square Corners at Top] (dir = the side its side studs face)",
+		"qty": 2722,
+		"ldraw": [
+			{
+				"f": "28802",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "28802",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_24307": {
+		"name": "Wedge Plate 2 x 2 Right",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			1
+		],
+		"cal": "face",
+		"r0": 2,
+		"center": [
+			10,
+			0
+		],
+		"use": "Wedge Plate 2 x 2 Right (dir = the side where it sticks out)",
+		"qty": 2720,
+		"ldraw": [
+			{
+				"f": "24307",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "24307",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_30503": {
+		"name": "Wedge Plate 4 x 4 Cut Corner",
+		"group": 7,
+		"foot": [
+			4,
+			4,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Wedge Plate 4 x 4 Cut Corner",
+		"qty": 2713,
+		"ldraw": [
+			{
+				"f": "30503",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "30503",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_93274": {
+		"name": "Bracket 1 x 2 - 2 x 4",
+		"group": 7,
+		"foot": [
+			1,
+			4,
+			5
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Bracket 1 x 2 - 2 x 4 (dir = the side its side studs face)",
+		"qty": 2700,
+		"ldraw": [
+			{
+				"f": "93274",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "93274",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_15207": {
+		"name": "Panel 1 x 4 x 1 with Rounded Corners [Thin Wall]",
+		"group": 7,
+		"foot": [
+			4,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Panel 1 x 4 x 1 with Rounded Corners [Thin Wall] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 2690,
+		"ldraw": [
+			{
+				"f": "15207",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "15207",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4216": {
+		"name": "Brick Special 1 x 2 with Groove",
+		"group": 7,
+		"foot": [
+			2,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 2 with Groove (dir = \"x\" or \"y\" (the long side))",
+		"qty": 2666,
+		"ldraw": [
+			{
+				"f": "4216",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4216",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_70681": {
+		"name": "Brick Curved, 3 x 1 with 1/3 Inverted Cutout",
+		"group": 7,
+		"foot": [
+			1,
+			1,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Curved, 3 x 1 with 1/3 Inverted Cutout (dir = the side where it sticks out)",
+		"qty": 2642,
+		"ldraw": [
+			{
+				"f": "70681",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "70681",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2465": {
+		"name": "Brick 1 x 16",
+		"group": 7,
+		"foot": [
+			16,
+			1,
+			3
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick 1 x 16 (dir = \"x\" or \"y\" (the long side))",
+		"qty": 2640,
+		"ldraw": [
+			{
+				"f": "2465",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2465",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_3679": {
+		"name": "Turntable 2 x 2 Plate - Top",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			1
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Turntable 2 x 2 Plate - Top",
+		"qty": 2602,
+		"ldraw": [
+			{
+				"f": "3679",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "3679",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_2458": {
+		"name": "Brick Special 1 x 2 with Pin",
+		"group": 7,
+		"foot": [
+			1,
+			2,
+			3
+		],
+		"cal": "face",
+		"r0": 1,
+		"center": [
+			0,
+			0
+		],
+		"use": "Brick Special 1 x 2 with Pin (dir = the side where it sticks out)",
+		"qty": 2599,
+		"ldraw": [
+			{
+				"f": "2458",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "2458",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_27507": {
+		"name": "Tile 4 x 4 Curved, Macaroni",
+		"group": 7,
+		"foot": [
+			4,
+			4,
+			1
+		],
+		"r0": 0,
+		"center": [
+			40,
+			-40
+		],
+		"use": "Tile 4 x 4 Curved, Macaroni",
+		"qty": 2591,
+		"ldraw": [
+			{
+				"f": "27507",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "27507",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_4185": {
+		"name": "Technic Wedge Belt Wheel [aka Pulley]",
+		"group": 7,
+		"foot": [
+			3,
+			1,
+			8
+		],
+		"cal": "long",
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Technic Wedge Belt Wheel [aka Pulley] (dir = \"x\" or \"y\" (the long side))",
+		"qty": 2565,
+		"ldraw": [
+			{
+				"f": "4185",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "4185",
+				"c": "main",
+				"q": 1
+			}
+		]
+	},
+	"p_10247": {
+		"name": "Plate Special 2 x 2 with 1 Pin Hole [Complete Underside Rib]",
+		"group": 7,
+		"foot": [
+			2,
+			2,
+			2
+		],
+		"r0": 0,
+		"center": [
+			0,
+			0
+		],
+		"use": "Plate Special 2 x 2 with 1 Pin Hole [Complete Underside Rib]",
+		"qty": 2531,
+		"ldraw": [
+			{
+				"f": "10247",
+				"c": "main"
+			}
+		],
+		"buy": [
+			{
+				"p": "10247",
+				"c": "main",
+				"q": 1
+			}
+		]
 	}
 }
