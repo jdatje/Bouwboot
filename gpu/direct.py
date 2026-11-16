@@ -82,11 +82,30 @@ WHEELS = [("wheels_s", 5.5), ("wheels_l", 7.5), ("wheels_b", 10.5), ("wheels_h",
 
 
 def wheel_for(width, asked="auto"):
-    """The real wheel set that fits a vehicle this wide (a bigger one than asked when the body would hide it)."""
-    asked = {"small": "wheels_s", "large": "wheels_l", "big": "wheels_b", "huge": "wheels_h"}.get(asked.lower(), "")
-    fit = next(sid for sid, upto in WHEELS if width <= upto)
+    """The real wheel set for a vehicle this wide. Big off-road tyres only when asked (tractor, monster truck);
+    otherwise at most truck wheels."""
+    asked = str(asked).lower()
+    ids = {"small": "wheels_s", "large": "wheels_l", "big": "wheels_b", "truck": "wheels_b", "huge": "wheels_h", "offroad": "wheels_h"}
     order = [w for w, _ in WHEELS]
-    return max(asked, fit, key=order.index) if asked in order else fit
+    fit = next(sid for sid, upto in WHEELS if width <= upto)
+    if ids.get(asked) != "wheels_h" and fit == "wheels_h":
+        fit = "wheels_b"
+    a = ids.get(asked, "")
+    return max(a, fit, key=order.index) if a in order else fit
+
+
+def vehicle_span(parts, x, length=2):
+    """Side-to-side extent (y, width) of the vehicle above wheels at x: the lowest solid part over the axle."""
+    over = [p for p in parts if p.get("op", "box") in ("box", "wedge", "roof") and not p.get("cut")
+            and float(p.get("x", 0)) < x + length and float(p.get("x", 0)) + float(p.get("w", 0)) > x
+            and 2 <= float(p.get("z", 0)) <= 14 and float(p.get("d", 0)) > 0]  # a chassis sits on its wheels (3+ plates)
+    if not over:
+        return None
+    z0 = min(float(p.get("z", 0)) for p in over)
+    low = [p for p in over if float(p.get("z", 0)) <= z0 + 3]
+    y0 = min(float(p.get("y", 0)) for p in low)
+    y1 = max(float(p.get("y", 0)) + float(p.get("d", 0)) for p in low)
+    return y0, y1 - y0
 
 
 def _specials_of(p, D):
@@ -98,10 +117,16 @@ def _specials_of(p, D):
         ht = SPECIALS[sid]["foot"][2]
         out.append((sid, int(round(x if xx is None else xx)), int(round(y if yy is None else yy)), z if zz is None else zz, h, w, ht, d))
     if op == "wheels":
-        sid = wheel_for(D, str(p.get("size", "auto")))
+        # the vehicle's own side-to-side extent: given by the designer, found above the axle, or the whole model
+        if "d" in p and "y_given" in p:
+            vy, vw = float(p["y"]), float(p["d"])
+        elif "_vy" in p:
+            vy, vw = p["_vy"], p["_vw"]
+        else:
+            vy, vw = 0.0, D
+        sid = wheel_for(vw, str(p.get("size", "auto")))
         h, w, _ = SPECIALS[sid]["foot"]
-        yy = p["y"] if "y" in p and p.get("y") is not None and "y_given" in p else D / 2 - w / 2
-        put(sid, h, w, 0, yy=yy, zz=int(round(float(p.get("z", 0)))))
+        put(sid, h, w, 0, yy=vy + vw / 2 - w / 2, zz=int(round(float(p.get("z", 0)))))
     elif op in ("window", "door"):
         sid = "door" if op == "door" else {"2x2": "window_2x2", "2x3": "window_2x3", "4x3": "window_4x3"}.get(str(p.get("size", "2x2")), "window_2x2")
         ln = SPECIALS[sid]["foot"][0]
@@ -167,10 +192,17 @@ def program_to_grid(prog, with_specials=False):
     sx = max(0, -int(np.floor(min(lo(p, "x") for p in parts))))
     sy = max(0, -int(np.floor(min(lo(p, "y") for p in parts))))
     for p in parts:
+        if p.get("op") == "wheels" and not ("d" in p and "y" in p):
+            span = vehicle_span(parts, float(p.get("x", 0)))
+            if span:
+                p["_vy"], p["_vw"] = span
+    for p in parts:
         if "y" in p:
             p["y_given"] = True
         p["x"] = float(p.get("x", 0)) + sx
         p["y"] = float(p.get("y", 0)) + sy
+        if "_vy" in p:
+            p["_vy"] += sy
         p["z"] = max(0.0, float(p.get("z", 0))) if p.get("op") != "cylinder" or p.get("axis", "z") == "z" else float(p.get("z", 0))
     X = int(min(MAX[0], max(np.ceil(p.get("x", 0) + (12 if p.get("op") in SPECIAL_OPS else p.get("w", p.get("len", p.get("r", 0))))) for p in parts) + 2))
     Y = int(min(MAX[1], max(np.ceil(p.get("y", 0) + (12 if p.get("op") in SPECIAL_OPS else p.get("d", p.get("len", p.get("r", 0))))) for p in parts) + 2))
@@ -455,22 +487,26 @@ def scale_program(prog, f):
             continue
         q = dict(p)
         op = q.get("op", "box")
-        if op == "wheels" and float((prog.get("size") or {}).get("d", 6)) * f <= 18:
-            # the scaled vehicle still fits a real wheel set: let the width pick it
-            q["x"] = round(float(q.get("x", 0)) * f)
-            q["z"] = round(float(q.get("z", 0)) * f)
-            q["size"] = "auto"
-            out.append(q)
-            continue
-        if op == "wheels" and f >= 1.8:
-            # real LEGO wheels would look tiny on a model this much bigger: build them from bricks instead
-            big = str(q.get("size", "small")).startswith("l")
+        if op == "wheels":
+            vspan = (float(q["y"]), float(q["d"])) if "d" in q and "y" in q else vehicle_span(prog["parts"], float(q.get("x", 0)))
+            vy, vw = vspan if vspan else (0.0, float((prog.get("size") or {}).get("d", 6)))
+            huge = str(q.get("size", "")).lower() in ("huge", "offroad")
+            if vw * f <= (18 if huge else 14):
+                # the scaled vehicle still fits a real wheel set: its width picks it
+                q.update(x=round(float(q.get("x", 0)) * f), z=round(float(q.get("z", 0)) * f), y=round(vy * f), d=round(vw * f))
+                q["size"] = q.get("size") if huge else "auto"
+                out.append(q)
+                continue
+            # real LEGO wheels would look tiny on a model this much bigger: build them from bricks, at the vehicle's sides
+            big = str(q.get("size", "small")).startswith(("l", "h", "b", "t", "o"))
             r = (1.25 if big else 0.9) * f
-            cx = (float(q.get("x", 0)) + (1.5 if big else 1)) * f
-            out.append({"op": "cylinder", "axis": "y", "x": round(cx * 2) / 2, "y": -0.5, "z": round(r * 2.5),
-                        "r": round(r * 2) / 2, "len": max(1, round(0.6 * f)), "color": "black", "mirror": True})
-            out.append({"op": "cylinder", "axis": "y", "x": round(cx * 2) / 2, "y": -0.5, "z": round(r * 2.5),
-                        "r": max(0.5, round(r * 0.9)) / 2, "len": 1, "color": "light_grey", "mirror": True})
+            cx = round((float(q.get("x", 0)) + (1.5 if big else 1)) * f * 2) / 2
+            ln = max(1, round(0.6 * f))
+            for yy in (vy * f - 0.5, (vy + vw) * f - ln + 0.5):
+                out.append({"op": "cylinder", "axis": "y", "x": cx, "y": yy, "z": round(r * 2.5), "r": round(r * 2) / 2,
+                            "len": ln, "color": "black"})
+                out.append({"op": "cylinder", "axis": "y", "x": cx, "y": yy if yy < vy * f else yy + ln - 1, "z": round(r * 2.5),
+                            "r": max(0.5, round(r * 0.9)) / 2, "len": 1, "color": "light_grey"})
             continue
         if op == "window" and f >= 1.5:
             # one real window would be lost on a wall this much bigger: a block of real windows instead
