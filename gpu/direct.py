@@ -82,13 +82,13 @@ WHEELS = [("wheels_s", 5.5), ("wheels_l", 7.5), ("wheels_b", 10.5), ("wheels_h",
 
 
 def wheel_for(width, asked="auto"):
-    """The real wheel set for a vehicle this wide. Big off-road tyres only when asked (tractor, monster truck);
-    otherwise at most truck wheels."""
+    """The real wheel set for a vehicle this wide (a bigger one than asked when the body would hide it).
+    Trains and trams ("size":"train") get at most truck wheels, never knobbly off-road tyres."""
     asked = str(asked).lower()
     ids = {"small": "wheels_s", "large": "wheels_l", "big": "wheels_b", "truck": "wheels_b", "huge": "wheels_h", "offroad": "wheels_h"}
     order = [w for w, _ in WHEELS]
     fit = next(sid for sid, upto in WHEELS if width <= upto)
-    if ids.get(asked) != "wheels_h" and fit == "wheels_h":
+    if asked in ("train", "tram", "rail") and fit == "wheels_h":
         fit = "wheels_b"
     a = ids.get(asked, "")
     return max(a, fit, key=order.index) if a in order else fit
@@ -490,11 +490,11 @@ def scale_program(prog, f):
         if op == "wheels":
             vspan = (float(q["y"]), float(q["d"])) if "d" in q and "y" in q else vehicle_span(prog["parts"], float(q.get("x", 0)))
             vy, vw = vspan if vspan else (0.0, float((prog.get("size") or {}).get("d", 6)))
-            huge = str(q.get("size", "")).lower() in ("huge", "offroad")
-            if vw * f <= (18 if huge else 14):
+            train = str(q.get("size", "")).lower() in ("train", "tram", "rail")
+            if vw * f <= (14 if train else 18):
                 # the scaled vehicle still fits a real wheel set: its width picks it
                 q.update(x=round(float(q.get("x", 0)) * f), z=round(float(q.get("z", 0)) * f), y=round(vy * f), d=round(vw * f))
-                q["size"] = q.get("size") if huge else "auto"
+                q["size"] = "train" if train else "auto"
                 out.append(q)
                 continue
             # real LEGO wheels would look tiny on a model this much bigger: build them from bricks, at the vehicle's sides
